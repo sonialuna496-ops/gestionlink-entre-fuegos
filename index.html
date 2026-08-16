@@ -2,6 +2,7 @@
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>GestiónLink V10.3 · Entre Fuegos</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js"></script>
 <style>
 :root{--bg:#101010;--card:#1d1d1d;--line:#343434;--txt:#f5f5f5;--muted:#aaa;--accent:#ff7a18;--ok:#34c759;--warn:#ffcc00}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}.screen{min-height:100vh;padding:22px}.auth{max-width:440px;margin:5vh auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}.brand{font-weight:950;font-size:28px;letter-spacing:.5px}.brand span{color:var(--accent)}h1,h2,h3{margin:.4em 0}.muted{color:var(--muted);font-size:13px}label{display:block;margin-top:12px;font-size:12px;color:#bbb}input,select,textarea{width:100%;background:#111;color:#fff;border:1px solid #444;border-radius:10px;padding:12px;margin-top:5px}textarea{min-height:90px}.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:800}.primary{background:var(--accent);color:#111}.ghost{background:#282828;color:#fff;border:1px solid #444}.danger{background:#512020;color:#fff}.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}.msg{margin:12px 0;padding:10px;border-radius:10px;background:#29220e;color:#ffe59a;font-size:13px}header{position:sticky;top:0;z-index:5;background:#151515;border-bottom:1px solid #333;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}main{padding:14px;max-width:1500px;margin:auto}.topbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.salesBox{background:#173522;border:1px solid #2f7047;border-radius:12px;padding:10px 14px;min-width:180px}.salesBox .big{font-size:22px;font-weight:950;color:#bdf3cd}.salesBox .small{font-size:11px;color:#9fd4ad}.pill{background:#292929;border:1px solid #444;border-radius:999px;padding:7px 10px;font-size:12px}.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.col{background:#171717;border:1px solid #333;border-radius:14px;padding:10px;min-height:180px}.col h3{font-size:14px;display:flex;justify-content:space-between}.card{background:#242424;border:1px solid #3b3b3b;border-radius:12px;padding:12px;margin:9px 0}.order{font-size:18px;font-weight:900;color:#ffad66}.items{white-space:pre-wrap;font-size:16px;font-weight:800;margin:8px 0}.address{font-size:16px;font-weight:900;background:#16251a;padding:8px;border-radius:8px}.pay{margin-top:8px;padding:8px;border-radius:8px;background:#25210d}.admininfo{font-size:13px;color:#ddd;line-height:1.5}.actions{display:flex;gap:6px;margin-top:10px}.actions button{flex:1}.modal{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}.box{background:#1d1d1d;border:1px solid #444;border-radius:16px;padding:18px;width:min(620px,100%);max-height:92vh;overflow:auto}.userline{display:flex;justify-content:space-between;gap:10px;align-items:center;border-top:1px solid #333;padding:10px 0}@media(max-width:900px){.board{grid-template-columns:1fr 1fr}}@media(max-width:600px){.board{grid-template-columns:1fr}header .brand{font-size:19px}}
@@ -28,6 +29,73 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY); let profile=null; let
 };
  firebase.initializeApp(firebaseConfig);
   const VAPID_KEY = "BOOmHZmPeDuYjrb6qaQnBK2AUFYiibUGoDAiw1puIiuZlaDAI_f0PP-Tc-lCKqnGFZqUKbK_sxe50g5Dj5UzF4U";
+const messaging = firebase.messaging();
+
+async function enablePushNotifications(){
+  try{
+    if(!('Notification' in window)){
+      alert('Este navegador no permite notificaciones push.');
+      return null;
+    }
+    if(!('serviceWorker' in navigator)){
+      alert('Este navegador no permite notificaciones en segundo plano.');
+      return null;
+    }
+
+    const permission = await Notification.requestPermission();
+    if(permission !== 'granted'){
+      alert('Debes permitir las notificaciones para recibir pedidos en segundo plano.');
+      return null;
+    }
+
+    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+
+    const token = await messaging.getToken({
+      vapidKey: VAPID_KEY,
+      serviceWorkerRegistration: registration
+    });
+
+    if(!token){
+      alert('No se pudo registrar este celular para notificaciones.');
+      return null;
+    }
+
+    localStorage.setItem('gl_fcm_token', token);
+
+    // Si luego existe el RPC de registro en Supabase, lo usamos sin romper la app si aún no está creado.
+    try{
+      const {error} = await sb.rpc('gl_register_push_token', {
+        p_token: token,
+        p_user_agent: navigator.userAgent
+      });
+      if(error) console.warn('Token obtenido; falta activar gl_register_push_token en Supabase:', error.message);
+    }catch(e){
+      console.warn('Token obtenido; todavía no se guardó en el servidor:', e);
+    }
+
+    return token;
+  }catch(e){
+    console.error('Error activando push:', e);
+    alert('No pude activar las notificaciones: ' + (e.message || e));
+    return null;
+  }
+}
+
+messaging.onMessage((payload)=>{
+  console.log('Notificación FCM recibida:', payload);
+
+  if(soundEnabled) playAlert(payload?.data?.kind === 'ready' ? 'ready' : 'new');
+
+  const title = payload?.notification?.title || '🔥 Entre Fuegos';
+  const body = payload?.notification?.body || 'Tienes una actualización de pedido';
+
+  if(Notification.permission === 'granted' && document.visibilityState === 'visible'){
+    try{
+      new Notification(title, { body, tag:'gestionlink-pedido' });
+    }catch(e){}
+  }
+});
+
 const $=id=>document.getElementById(id); const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function msg(t){$('authMsg').textContent=t;$('authMsg').classList.remove('hidden')} function money(x){return '$'+Number(x||0).toFixed(2)}
 function getAudio(){
@@ -41,11 +109,16 @@ async function enableSound(){
     await ctx.resume();
     soundEnabled=true;
     localStorage.setItem('gl_sound_enabled','1');
-    $('soundBtn').textContent='🔔 Alertas activas';
+    $('soundBtn').textContent='🔔 Activando alertas…';
+
+    const token = await enablePushNotifications();
+
+    $('soundBtn').textContent = token ? '🔔 Alertas activas' : '🔔 Sonido activo · Push pendiente';
     playAlert('test');
     setTimeout(()=>checkPendingRoleAlerts(true),700);
   }catch(e){
-    alert('No pude activar el sonido. Toca de nuevo el botón.');
+    console.error(e);
+    alert('No pude activar las alertas. Toca de nuevo el botón.');
   }
 }
 function tone(ctx,start,freq,dur,vol){
