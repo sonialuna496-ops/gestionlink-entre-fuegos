@@ -13,54 +13,12 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Notificación recibida:', payload);
+  console.log('Mensaje recibido en segundo plano:', payload);
 
-  const notificationTitle =
-    payload.notification?.title ||
-    payload.data?.title ||
-    '🔥 ENTRE FUEGOS';
-
-  const notificationOptions = {
-    body:
-      payload.notification?.body ||
-      payload.data?.body ||
-      'Tienes una nueva notificación',
-    icon: '/favicon.ico',
-    badge: '/favicon.ico',
-    vibrate: [300, 100, 300, 100, 500],
-    requireInteraction: true,
-    tag: payload.data?.tag || 'gestionlink-alerta',
-    data: {
-      url: payload.data?.url || '/'
-    }
+  const title = '🔥 Entre Fuegos';
+  const options = {
+    body: payload?.notification?.body || 'Tienes un pedido nuevo'
   };
 
-  return self.registration.showNotification(
-    notificationTitle,
-    notificationOptions
-  );
-});
-
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  const url = event.notification.data?.url || '/';
-
-  event.waitUntil(
-    clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true
-    }).then((clientList) => {
-      for (const client of clientList) {
-        if ('focus' in client) {
-          client.navigate(url);
-          return client.focus();
-        }
-      }
-
-      if (clients.openWindow) {
-        return clients.openWindow(url);
-      }
-    })
-  );
+  self.registration.showNotification(title, options);
 });
