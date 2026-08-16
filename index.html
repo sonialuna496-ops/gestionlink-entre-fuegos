@@ -27,6 +27,7 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY); let profile=null; let
   appId: "1:496848285254:web:781f82bb067c25258ce447"
 };
  firebase.initializeApp(firebaseConfig);
+  const VAPID_KEY = "BOOmHZmPeDuYjrb6qaQnBK2AUFYiibUGoDAiw1puIiuZlaDAI_f0PP-Tc-lCKqnGFZqUKbK_sxe50g5Dj5UzF4U";
 const $=id=>document.getElementById(id); const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function msg(t){$('authMsg').textContent=t;$('authMsg').classList.remove('hidden')} function money(x){return '$'+Number(x||0).toFixed(2)}
 function getAudio(){
