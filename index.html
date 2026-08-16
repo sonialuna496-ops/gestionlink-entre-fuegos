@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>GestiónLink V10.3 · Entre Fuegos</title>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>GestiónLink V10.5 · Entre Fuegos</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-messaging-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"></script>
 <style>
 :root{--bg:#101010;--card:#1d1d1d;--line:#343434;--txt:#f5f5f5;--muted:#aaa;--accent:#ff7a18;--ok:#34c759;--warn:#ffcc00}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}.screen{min-height:100vh;padding:22px}.auth{max-width:440px;margin:5vh auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}.brand{font-weight:950;font-size:28px;letter-spacing:.5px}.brand span{color:var(--accent)}h1,h2,h3{margin:.4em 0}.muted{color:var(--muted);font-size:13px}label{display:block;margin-top:12px;font-size:12px;color:#bbb}input,select,textarea{width:100%;background:#111;color:#fff;border:1px solid #444;border-radius:10px;padding:12px;margin-top:5px}textarea{min-height:90px}.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:800}.primary{background:var(--accent);color:#111}.ghost{background:#282828;color:#fff;border:1px solid #444}.danger{background:#512020;color:#fff}.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}.msg{margin:12px 0;padding:10px;border-radius:10px;background:#29220e;color:#ffe59a;font-size:13px}header{position:sticky;top:0;z-index:5;background:#151515;border-bottom:1px solid #333;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}main{padding:14px;max-width:1500px;margin:auto}.topbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.salesBox{background:#173522;border:1px solid #2f7047;border-radius:12px;padding:10px 14px;min-width:180px}.salesBox .big{font-size:22px;font-weight:950;color:#bdf3cd}.salesBox .small{font-size:11px;color:#9fd4ad}.pill{background:#292929;border:1px solid #444;border-radius:999px;padding:7px 10px;font-size:12px}.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.col{background:#171717;border:1px solid #333;border-radius:14px;padding:10px;min-height:180px}.col h3{font-size:14px;display:flex;justify-content:space-between}.card{background:#242424;border:1px solid #3b3b3b;border-radius:12px;padding:12px;margin:9px 0}.order{font-size:18px;font-weight:900;color:#ffad66}.items{white-space:pre-wrap;font-size:16px;font-weight:800;margin:8px 0}.address{font-size:16px;font-weight:900;background:#16251a;padding:8px;border-radius:8px}.pay{margin-top:8px;padding:8px;border-radius:8px;background:#25210d}.admininfo{font-size:13px;color:#ddd;line-height:1.5}.actions{display:flex;gap:6px;margin-top:10px}.actions button{flex:1}.modal{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}.box{background:#1d1d1d;border:1px solid #444;border-radius:16px;padding:18px;width:min(620px,100%);max-height:92vh;overflow:auto}.userline{display:flex;justify-content:space-between;gap:10px;align-items:center;border-top:1px solid #333;padding:10px 0}@media(max-width:900px){.board{grid-template-columns:1fr 1fr}}@media(max-width:600px){.board{grid-template-columns:1fr}header .brand{font-size:19px}}
@@ -13,13 +13,13 @@
 <div id="claimBox" class="hidden"></div>
 <div id="requestBox" class="hidden"><hr style="border-color:#333;margin:18px 0"><h3>Solicitar acceso</h3><label>Nombre</label><input id="requestName"><label>Área</label><select id="requestRole"><option value="kitchen">Cocina</option><option value="delivery">Delivery</option></select><button class="btn primary" style="width:100%;margin-top:10px" onclick="requestAccess()">SOLICITAR ACCESO</button><p class="muted">La administradora debe activarte antes de que puedas ver pedidos.</p></div>
 </div></div>
-<div id="app" class="hidden"><header><div><div class="brand">ENTRE <span>FUEGOS</span> 🔥</div><div class="muted">GestiónLink V10.3 · alarma reforzada</div></div><div class="row" style="flex:0 1 auto"><span id="rolePill" class="pill"></span><button class="btn ghost" onclick="logout()">Salir</button></div></header><main><div class="topbar"><button id="newOrderBtn" class="btn primary hidden" onclick="openNew()">＋ Pedido nuevo</button><button id="usersBtn" class="btn ghost hidden" onclick="openUsers()">👥 Usuarios</button><button id="closeDayBtn" class="btn ghost hidden" onclick="openReports()">📅 Caja y cierres</button><button id="clearBtn" class="btn danger hidden" onclick="clearTestOrders()">🧹 Limpiar pruebas</button><button class="btn ghost" onclick="loadOrders()">↻ Actualizar</button><button id="soundBtn" class="btn ghost" onclick="enableSound()">🔔 Activar alertas</button><span id="syncText" class="pill">Conectado</span><div id="salesBox" class="salesBox hidden"><div class="small">💰 VENTAS REALIZADAS</div><div id="salesTotal" class="big">$0.00</div><div id="salesCount" class="small">0 pedidos entregados</div></div></div><div id="board" class="board"></div></main></div>
+<div id="app" class="hidden"><header><div><div class="brand">ENTRE <span>FUEGOS</span> 🔥</div><div class="muted">GestiónLink V10.5 · notificaciones push</div></div><div class="row" style="flex:0 1 auto"><span id="rolePill" class="pill"></span><button class="btn ghost" onclick="logout()">Salir</button></div></header><main><div class="topbar"><button id="newOrderBtn" class="btn primary hidden" onclick="openNew()">＋ Pedido nuevo</button><button id="usersBtn" class="btn ghost hidden" onclick="openUsers()">👥 Usuarios</button><button id="closeDayBtn" class="btn ghost hidden" onclick="openReports()">📅 Caja y cierres</button><button id="clearBtn" class="btn danger hidden" onclick="clearTestOrders()">🧹 Limpiar pruebas</button><button class="btn ghost" onclick="loadOrders()">↻ Actualizar</button><button id="soundBtn" class="btn ghost" onclick="enableSound()">🔔 Activar alertas</button><button id="pushBtn" class="btn ghost" onclick="enablePush()">📲 Activar notificaciones</button><span id="syncText" class="pill">Conectado</span><div id="salesBox" class="salesBox hidden"><div class="small">💰 VENTAS REALIZADAS</div><div id="salesTotal" class="big">$0.00</div><div id="salesCount" class="small">0 pedidos entregados</div></div></div><div id="board" class="board"></div></main></div>
 <div id="newModal" class="modal hidden"><div class="box"><h2>Pedido nuevo</h2><div class="row"><div><label>Cliente</label><input id="client"></div><div><label>Teléfono</label><input id="phone"></div></div><label>Pedido</label><textarea id="items" placeholder="Ej. 2 Papi Crispy"></textarea><div class="row"><div><label>Total</label><input id="total" type="number" step="0.01"></div><div><label>Tiempo estimado (min)</label><input id="eta" type="number" value="30"></div></div><label>Tipo de pedido</label><select id="fulfillment" onchange="toggleAddress()"><option value="delivery">🏠 Domicilio</option><option value="pickup">🛍️ Retira en local</option><option value="local">🍽️ Consume en local</option></select><div id="addressWrap"><label>Mz / Villa / Dirección</label><input id="address"></div><label>Forma de pago</label><select id="payment" onchange="toggleMixed()"><option value="cash">💵 Efectivo</option><option value="transfer">📲 Transferencia</option><option value="mixed">💵📲 Pago mixto</option></select><div id="mixedWrap" class="hidden"><div class="row"><div><label>💵 Efectivo</label><input id="mixedCash" type="number" step="0.01" min="0"></div><div><label>📲 Transferencia</label><input id="mixedTransfer" type="number" step="0.01" min="0"></div></div><div id="mixedCheck" class="muted"></div></div><div id="raffleHint" class="msg hidden"></div><label>Observaciones para cocina</label><textarea id="notes"></textarea><div class="row" style="margin-top:12px"><button class="btn primary" onclick="createOrder()">GUARDAR PEDIDO</button><button class="btn ghost" onclick="closeNew()">Cancelar</button></div></div></div>
 <div id="usersModal" class="modal hidden"><div class="box"><h2>Usuarios</h2><p class="muted">Las cuentas nuevas de Cocina o Delivery quedan pendientes hasta que tú las actives.</p><div id="usersList"></div><button class="btn ghost" style="width:100%;margin-top:10px" onclick="closeUsers()">Cerrar</button></div></div>
 <div id="reportsModal" class="modal hidden"><div class="box"><h2>📅 Caja y cierres</h2><p class="muted">Cada día queda separado. La apertura no cuenta como venta.</p><label>Fecha</label><input id="reportDate" type="date"><label>💰 Apertura de caja</label><div class="row"><input id="openingCash" type="number" step="0.01" min="0"><button class="btn primary" onclick="saveOpening()">GUARDAR APERTURA</button></div><div id="dailyBox" class="msg">Cargando…</div><label>💵 Efectivo contado al cierre</label><input id="countedCash" type="number" step="0.01" min="0"><div class="row" style="margin-top:10px"><button class="btn ghost" onclick="loadDailyReport()">ACTUALIZAR</button><button class="btn primary" onclick="closeSelectedDay()">CERRAR DÍA</button></div><hr style="border-color:#333;margin:18px 0"><label>📊 Mes</label><input id="reportMonth" type="month"><button class="btn ghost" style="width:100%;margin-top:8px" onclick="loadMonth()">VER REPORTE MENSUAL</button><div id="monthSummary" class="msg hidden"></div><div id="closingList"></div><button class="btn ghost" style="width:100%;margin-top:12px" onclick="closeReports()">Cerrar</button></div></div><script>
 const SUPABASE_URL='https://vhqcbfqyhltaxlxxamdp.supabase.co'; const SUPABASE_KEY='sb_publishable_ncz32RHUkdlx3cwR5iDEIw_goKWVOqv';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY); let profile=null; let orders=[]; let firstSync=true; let previousStates=new Map(); let audioCtx=null; let soundEnabled=false; let loadingOrders=false;
-  const firebaseConfig = {
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const firebaseConfig = {
   apiKey: "AIzaSyAoAc9IIggSXbunRcHuEU6MuzeUCDH88Uo",
   authDomain: "gestionlink-entre-fuegos-2.firebaseapp.com",
   projectId: "gestionlink-entre-fuegos-2",
@@ -27,75 +27,59 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY); let profile=null; let
   messagingSenderId: "496848285254",
   appId: "1:496848285254:web:781f82bb067c25258ce447"
 };
- firebase.initializeApp(firebaseConfig);
-  const VAPID_KEY = "BOOmHZmPeDuYjrb6qaQnBK2AUFYiibUGoDAiw1puIiuZlaDAI_f0PP-Tc-lCKqnGFZqUKbK_sxe50g5Dj5UzF4U";
-const messaging = firebase.messaging();
+const FCM_VAPID_KEY='BOOmHZmPeDuYjrb6qaQnBK2AUFYiibUGoDAiw1puIiuZlaDAI_f0PP-Tc-lCKqnGFZqUKbK_sxe50g5Dj5UzF4U';
+let messaging=null;
 
-async function enablePushNotifications(){
+async function enablePush(){
+  if(!('serviceWorker' in navigator)||!('Notification' in window))
+    return alert('Este navegador no permite notificaciones web.');
   try{
-    if(!('Notification' in window)){
-      alert('Este navegador no permite notificaciones push.');
-      return null;
-    }
-    if(!('serviceWorker' in navigator)){
-      alert('Este navegador no permite notificaciones en segundo plano.');
-      return null;
-    }
-
-    const permission = await Notification.requestPermission();
-    if(permission !== 'granted'){
-      alert('Debes permitir las notificaciones para recibir pedidos en segundo plano.');
-      return null;
-    }
-
-    const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-
-    const token = await messaging.getToken({
-      vapidKey: VAPID_KEY,
-      serviceWorkerRegistration: registration
-    });
-
-    if(!token){
-      alert('No se pudo registrar este celular para notificaciones.');
-      return null;
-    }
-
-    localStorage.setItem('gl_fcm_token', token);
-
-    // Si luego existe el RPC de registro en Supabase, lo usamos sin romper la app si aún no está creado.
-    try{
-      const {error} = await sb.rpc('gl_register_push_token', {
-        p_token: token,
-        p_user_agent: navigator.userAgent
-      });
-      if(error) console.warn('Token obtenido; falta activar gl_register_push_token en Supabase:', error.message);
-    }catch(e){
-      console.warn('Token obtenido; todavía no se guardó en el servidor:', e);
-    }
-
-    return token;
+    const permission=await Notification.requestPermission();
+    if(permission!=='granted')
+      return alert('Debes pulsar PERMITIR para recibir notificaciones.');
+    const reg=await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    messaging=firebase.messaging();
+    const token=await messaging.getToken({vapidKey:FCM_VAPID_KEY,serviceWorkerRegistration:reg});
+    if(!token) return alert('No pude registrar este teléfono. Intenta otra vez.');
+    const {error}=await sb.rpc('gl_register_push_token',{p_token:token,p_user_agent:navigator.userAgent});
+    if(error) throw error;
+    localStorage.setItem('gl_push_enabled','1');
+    $('pushBtn').textContent='📲 Notificaciones activas';
+    alert('✅ Este teléfono ya recibirá notificaciones de GestiónLink.');
   }catch(e){
-    console.error('Error activando push:', e);
-    alert('No pude activar las notificaciones: ' + (e.message || e));
-    return null;
+    console.error(e);
+    alert('No pude activar las notificaciones: '+(e.message||e));
   }
 }
 
-messaging.onMessage((payload)=>{
-  console.log('Notificación FCM recibida:', payload);
+async function initPushForeground(){
+  try{
+    if(!('serviceWorker' in navigator) || Notification.permission!=='granted') return;
+    const reg=await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    messaging=firebase.messaging();
+    messaging.onMessage(payload=>{
+      const kind=payload?.data?.kind||'new';
+      if(soundEnabled) playAlert(kind==='ready'?'ready':'new');
+      if(navigator.vibrate) navigator.vibrate([350,120,350,120,500]);
+    });
+    if(localStorage.getItem('gl_push_enabled')==='1')
+      $('pushBtn').textContent='📲 Notificaciones activas';
+  }catch(e){console.warn('Push init:',e)}
+}
 
-  if(soundEnabled) playAlert(payload?.data?.kind === 'ready' ? 'ready' : 'new');
+async function sendPush(kind,orderNumber=''){
+  try{
+    const {data,error}=await sb.functions.invoke('gestionlink-push',{
+      body:{kind,order_number:orderNumber}
+    });
+    if(error) console.warn('Push:',error);
+    return data;
+  }catch(e){console.warn('Push:',e)}
+}
 
-  const title = payload?.notification?.title || '🔥 Entre Fuegos';
-  const body = payload?.notification?.body || 'Tienes una actualización de pedido';
-
-  if(Notification.permission === 'granted' && document.visibilityState === 'visible'){
-    try{
-      new Notification(title, { body, tag:'gestionlink-pedido' });
-    }catch(e){}
-  }
-});
-
+let profile=null; let orders=[]; let firstSync=true; let previousStates=new Map(); let audioCtx=null; let soundEnabled=false; let loadingOrders=false;
 const $=id=>document.getElementById(id); const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function msg(t){$('authMsg').textContent=t;$('authMsg').classList.remove('hidden')} function money(x){return '$'+Number(x||0).toFixed(2)}
 function getAudio(){
@@ -109,16 +93,11 @@ async function enableSound(){
     await ctx.resume();
     soundEnabled=true;
     localStorage.setItem('gl_sound_enabled','1');
-    $('soundBtn').textContent='🔔 Activando alertas…';
-
-    const token = await enablePushNotifications();
-
-    $('soundBtn').textContent = token ? '🔔 Alertas activas' : '🔔 Sonido activo · Push pendiente';
+    $('soundBtn').textContent='🔔 Alertas activas';
     playAlert('test');
     setTimeout(()=>checkPendingRoleAlerts(true),700);
   }catch(e){
-    console.error(e);
-    alert('No pude activar las alertas. Toca de nuevo el botón.');
+    alert('No pude activar el sonido. Toca de nuevo el botón.');
   }
 }
 function tone(ctx,start,freq,dur,vol){
@@ -191,7 +170,7 @@ async function logout(){await sb.auth.signOut();profile=null;$('app').classList.
 async function afterAuth(){const {data,error}=await sb.rpc('gl_my_profile'); if(error)return msg(error.message); if(data?.active){profile=data;showApp();return} $('claimBox').classList.add('hidden');$('requestBox').classList.remove('hidden');msg('Tu cuenta existe, pero todavía no tiene un perfil activo en GestiónLink.');}
 async function claimAdmin(){msg('La administración de Entre Fuegos ya está configurada.');}
 async function requestAccess(){const {error}=await sb.rpc('gl_request_access',{p_name:$('requestName').value.trim(),p_role:$('requestRole').value});if(error)return msg(error.message);msg('Solicitud enviada. La administradora debe activarte.');}
-function showApp(){$('authScreen').classList.add('hidden');$('app').classList.remove('hidden');$('rolePill').textContent=(profile.role==='admin'?'👑 ':profile.role==='kitchen'?'👨‍🍳 ':'🛵 ')+profile.name;$('newOrderBtn').classList.toggle('hidden',profile.role!=='admin');$('usersBtn').classList.toggle('hidden',profile.role!=='admin');$('closeDayBtn').classList.toggle('hidden',profile.role!=='admin');$('clearBtn').classList.toggle('hidden',profile.role!=='admin');$('salesBox').classList.toggle('hidden',profile.role!=='admin');firstSync=true;previousStates=new Map();restoreSoundPreference();loadOrders();}
+function showApp(){$('authScreen').classList.add('hidden');$('app').classList.remove('hidden');$('rolePill').textContent=(profile.role==='admin'?'👑 ':profile.role==='kitchen'?'👨‍🍳 ':'🛵 ')+profile.name;$('newOrderBtn').classList.toggle('hidden',profile.role!=='admin');$('usersBtn').classList.toggle('hidden',profile.role!=='admin');$('closeDayBtn').classList.toggle('hidden',profile.role!=='admin');$('clearBtn').classList.toggle('hidden',profile.role!=='admin');$('salesBox').classList.toggle('hidden',profile.role!=='admin');firstSync=true;previousStates=new Map();restoreSoundPreference();initPushForeground();loadOrders();}
 async function loadOrders(){
  if(loadingOrders||!profile)return;
  loadingOrders=true;
@@ -217,7 +196,14 @@ const titles={new:'NUEVOS',prep:'PREPARANDO',ready:'LISTOS / EN RUTA',done:'ENTR
 function render(){let statuses=profile.role==='admin'?['new','prep','ready','done']:profile.role==='kitchen'?['new','prep']:['ready'];$('board').innerHTML=statuses.map(s=>`<section class="col"><h3>${titles[s]} <span>${orders.filter(o=>o.status===s).length}</span></h3>${orders.filter(o=>o.status===s).map(card).join('')||'<div class="muted">Sin pedidos</div>'}</section>`).join('')}
 function payLabel(o){let p=o.payment_method==='cash'?'EFECTIVO':o.payment_method==='transfer'?'TRANSFERENCIA':'TARJETA PAGADA';if(o.payment_method==='cash'&&o.cash_received)p+=' · paga con '+money(o.cash_received)+(o.change_due!=null?' · cambio '+money(o.change_due):'');return p}
 function card(o){let info='';if(profile.role==='admin')info=`<div class="admininfo">Cliente: <b>${esc(o.customer_name||'—')}</b><br>Tel: ${esc(o.customer_phone||'—')}<br>Total: <b>${money(o.total)}</b><br>${o.address?'Dirección: '+esc(o.address)+'<br>':''}Pago: ${esc(payLabel(o))}${o.notes?'<br>Obs: '+esc(o.notes):''}</div>`;if(profile.role==='delivery')info=`${o.address?'<div class="address">📍 '+esc(o.address)+'</div>':''}<div class="pay">💳 ${esc(payLabel(o))}</div>`;let next=o.status==='new'?'prep':o.status==='prep'?'ready':o.status==='ready'?'done':null;let allowed=next&&((profile.role==='admin')||(profile.role==='kitchen'&&['prep','ready'].includes(next))||(profile.role==='delivery'&&next==='done'));let label=next==='prep'?'TOMAR / PREPARAR':next==='ready'?'LISTO':next==='done'?'ENTREGADO':'';return `<article class="card"><div class="order">#${esc(o.order_number)}</div><div class="items">${esc(o.items_text)}</div>${info}${allowed?`<div class="actions"><button class="btn primary" onclick="moveOrder('${o.id}','${next}')">${label}</button></div>`:''}</article>`}
-async function moveOrder(id,next){const {error}=await sb.rpc('gl_move_order',{p_order_id:id,p_next_status:next});if(error)return alert(error.message);await loadOrders();}
+async function moveOrder(id,next){
+ const before=orders.find(o=>String(o.id)===String(id));
+ const orderNumber=before?.order_number||'';
+ const {error}=await sb.rpc('gl_move_order',{p_order_id:id,p_next_status:next});
+ if(error)return alert(error.message);
+ if(next==='ready') await sendPush('ready',orderNumber);
+ await loadOrders();
+}
 function openNew(){$('newModal').classList.remove('hidden');toggleAddress();updateRaffleHint()}
 function closeNew(){$('newModal').classList.add('hidden')}
 function toggleAddress(){
@@ -238,7 +224,24 @@ $('total').addEventListener('input',updateRaffleHint);
 function toggleMixed(){const mixed=$('payment').value==='mixed';$('mixedWrap').classList.toggle('hidden',!mixed);checkMixed()}
 function checkMixed(){if($('payment').value!=='mixed')return;const total=Number($('total').value||0),c=Number($('mixedCash').value||0),tr=Number($('mixedTransfer').value||0),diff=total-c-tr;$('mixedCheck').textContent=Math.abs(diff)<.005?'✅ Pago completo':diff>0?'Falta '+money(diff):'Excede '+money(-diff)}
 ['total','mixedCash','mixedTransfer'].forEach(id=>$(id).addEventListener('input',()=>{updateRaffleHint();checkMixed()}));
-async function createOrder(){const mode=$('payment').value,total=Number($('total').value||0);let c=0,tr=0;if(mode==='mixed'){c=Number($('mixedCash').value||0);tr=Number($('mixedTransfer').value||0);if(Math.abs(c+tr-total)>.005)return alert('El efectivo y la transferencia deben sumar exactamente '+money(total));}const args={p_customer_name:$('client').value.trim(),p_customer_phone:$('phone').value.trim(),p_items_text:$('items').value.trim(),p_total:total,p_fulfillment:$('fulfillment').value,p_address:$('address').value.trim(),p_payment_mode:mode,p_cash_amount:c,p_transfer_amount:tr,p_eta_minutes:Number($('eta').value||30),p_notes:$('notes').value.trim()};if(!args.p_items_text)return alert('Escribe el pedido.');const {error}=await sb.rpc('gl_create_order_v2',args);if(error)return alert(error.message);closeNew();['client','phone','items','total','address','mixedCash','mixedTransfer','notes'].forEach(x=>$(x).value='');$('payment').value='cash';toggleMixed();await loadOrders();}
+async function createOrder(){
+ const mode=$('payment').value,total=Number($('total').value||0);
+ let c=0,tr=0;
+ if(mode==='mixed'){
+   c=Number($('mixedCash').value||0);tr=Number($('mixedTransfer').value||0);
+   if(Math.abs(c+tr-total)>.005)return alert('El efectivo y la transferencia deben sumar exactamente '+money(total));
+ }
+ const args={p_customer_name:$('client').value.trim(),p_customer_phone:$('phone').value.trim(),p_items_text:$('items').value.trim(),p_total:total,p_fulfillment:$('fulfillment').value,p_address:$('address').value.trim(),p_payment_mode:mode,p_cash_amount:c,p_transfer_amount:tr,p_eta_minutes:Number($('eta').value||30),p_notes:$('notes').value.trim()};
+ if(!args.p_items_text)return alert('Escribe el pedido.');
+ const {data,error}=await sb.rpc('gl_create_order_v2',args);
+ if(error)return alert(error.message);
+ await loadOrders();
+ const newest=orders.filter(o=>o.status==='new').sort((a,b)=>Number(b.order_number||0)-Number(a.order_number||0))[0];
+ await sendPush('new',newest?.order_number||data?.order_number||'');
+ closeNew();
+ ['client','phone','items','total','address','mixedCash','mixedTransfer','notes'].forEach(x=>$(x).value='');
+ $('payment').value='cash';toggleMixed();
+}
 async function openUsers(){$('usersModal').classList.remove('hidden');const {data,error}=await sb.rpc('gl_list_users');if(error)return alert(error.message);$('usersList').innerHTML=(data||[]).map(u=>`<div class="userline"><div><b>${esc(u.name)}</b><div class="muted">${u.role==='admin'?'Administrador':u.role==='kitchen'?'Cocina':'Delivery'} · ${u.active?'Activo':'Pendiente'}</div></div>${u.role!=='admin'?`<button class="btn ${u.active?'danger':'primary'}" onclick="setActive('${u.id}',${!u.active})">${u.active?'Desactivar':'ACTIVAR'}</button>`:''}</div>`).join('')}function closeUsers(){$('usersModal').classList.add('hidden')}async function setActive(id,active){const {error}=await sb.rpc('gl_set_user_active',{p_user_id:id,p_active:active});if(error)return alert(error.message);openUsers();}
 async function clearTestOrders(){
  if(!profile||profile.role!=='admin')return;
