@@ -1,0 +1,459 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>GestiónLink V11 · Entre Fuegos</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--bg:#101010;--card:#1d1d1d;--line:#343434;--txt:#f5f5f5;--muted:#aaa;--accent:#ff7a18;--ok:#34c759;--warn:#ffcc00}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.hidden{display:none!important}.screen{min-height:100vh;padding:22px}.auth{max-width:440px;margin:5vh auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}.brand{font-weight:950;font-size:28px;letter-spacing:.5px}.brand span{color:var(--accent)}h1,h2,h3{margin:.4em 0}.muted{color:var(--muted);font-size:13px}label{display:block;margin-top:12px;font-size:12px;color:#bbb}input,select,textarea{width:100%;background:#111;color:#fff;border:1px solid #444;border-radius:10px;padding:12px;margin-top:5px}textarea{min-height:90px}.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:800}.primary{background:var(--accent);color:#111}.ghost{background:#282828;color:#fff;border:1px solid #444}.danger{background:#512020;color:#fff}.row{display:flex;gap:8px;flex-wrap:wrap}.row>*{flex:1}.msg{margin:12px 0;padding:10px;border-radius:10px;background:#29220e;color:#ffe59a;font-size:13px}header{position:sticky;top:0;z-index:5;background:#151515;border-bottom:1px solid #333;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:10px}main{padding:14px;max-width:1500px;margin:auto}.topbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.salesBox{background:#173522;border:1px solid #2f7047;border-radius:12px;padding:10px 14px;min-width:180px}.salesBox .big{font-size:22px;font-weight:950;color:#bdf3cd}.salesBox .small{font-size:11px;color:#9fd4ad}.pill{background:#292929;border:1px solid #444;border-radius:999px;padding:7px 10px;font-size:12px}.board{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.col{background:#171717;border:1px solid #333;border-radius:14px;padding:10px;min-height:180px}.col h3{font-size:14px;display:flex;justify-content:space-between}.card{background:#242424;border:1px solid #3b3b3b;border-radius:12px;padding:12px;margin:9px 0}.order{font-size:18px;font-weight:900;color:#ffad66}.items{white-space:pre-wrap;font-size:16px;font-weight:800;margin:8px 0}.address{font-size:16px;font-weight:900;background:#16251a;padding:8px;border-radius:8px}.pay{margin-top:8px;padding:8px;border-radius:8px;background:#25210d}.admininfo{font-size:13px;color:#ddd;line-height:1.5}.responsibility{margin-top:9px;padding:9px;border-radius:9px;background:#161616;border:1px solid #383838;font-size:12px;line-height:1.55}.responsibility b{color:#ffd17d}.actions{display:flex;gap:6px;margin-top:10px}.actions button{flex:1}.modal{position:fixed;inset:0;background:#000b;display:flex;align-items:center;justify-content:center;padding:16px;z-index:20}.box{background:#1d1d1d;border:1px solid #444;border-radius:16px;padding:18px;width:min(620px,100%);max-height:92vh;overflow:auto}.userline{display:flex;justify-content:space-between;gap:10px;align-items:center;border-top:1px solid #333;padding:10px 0}@media(max-width:900px){.board{grid-template-columns:1fr 1fr}}@media(max-width:600px){.board{grid-template-columns:1fr}header .brand{font-size:19px}}
+
+.navbtn{white-space:nowrap}.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 14px}
+.panel{background:#171717;border:1px solid #333;border-radius:12px;padding:12px;margin:10px 0}
+.kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.kpi>div{background:#111;border:1px solid #333;border-radius:10px;padding:10px}
+.good{color:#85e6a3}.bad{color:#ff9d9d}.warnText{color:#ffe08a}.tiny{font-size:11px;color:#aaa}
+.menuGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.menuItem{background:#222;border:1px solid #3a3a3a;border-radius:12px;padding:12px}.menuItem.sold{opacity:.55}
+.menuPrice{font-size:20px;font-weight:900;color:#ffd17d}.qty{display:flex;gap:6px;align-items:center}.qty button{padding:5px 9px}
+.receiptPreview{max-width:100%;border-radius:10px;margin-top:8px;border:1px solid #444}
+.printOnly{display:none}
+@media print{body>*{display:none!important}.printOnly{display:block!important;color:#000;background:#fff;padding:12px}.printOnly *{color:#000!important}}
+</style></head><body>
+<div id="authScreen" class="screen"><div class="auth"><div class="brand">GESTIÓN<span>LINK</span> 🔥</div><h2>Entre Fuegos</h2><p class="muted">V11 conectada a la base de datos real. Cada persona entra con su propia cuenta.</p>
+<div id="authMsg" class="msg hidden"></div><label>Correo electrónico</label><input id="email" type="email" autocomplete="email" placeholder="tu@correo.com"><label>Contraseña</label><input id="password" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres">
+<div class="row" style="margin-top:12px"><button class="btn primary" onclick="login()">ENTRAR</button><button class="btn ghost" onclick="signup()">CREAR CUENTA</button></div><button class="btn ghost" style="width:100%;margin-top:8px" onclick="openCustomerMenu()">🍔 VER MENÚ Y PEDIR</button>
+<div id="claimBox" class="hidden"></div>
+<div id="requestBox" class="hidden"><hr style="border-color:#333;margin:18px 0"><h3>Solicitar acceso</h3><label>Nombre</label><input id="requestName"><label>Área</label><select id="requestRole"><option value="kitchen">Cocina</option><option value="delivery">Delivery</option></select><button class="btn primary" style="width:100%;margin-top:10px" onclick="requestAccess()">SOLICITAR ACCESO</button><p class="muted">La administradora debe activarte antes de que puedas ver pedidos.</p></div>
+</div></div>
+<div id="app" class="hidden"><header><div><div class="brand">ENTRE <span>FUEGOS</span> 🔥</div><div class="muted">GestiónLink V11 · versión final</div></div><div class="row" style="flex:0 1 auto"><span id="rolePill" class="pill"></span><button class="btn ghost" onclick="logout()">Salir</button></div></header><main><div class="topbar"><button id="newOrderBtn" class="btn primary hidden" onclick="openNew()">＋ Pedido nuevo</button><button id="usersBtn" class="btn ghost hidden" onclick="openUsers()">👥 Usuarios</button><button id="closeDayBtn" class="btn ghost hidden" onclick="openReports()">📅 Caja y cierres</button><button id="historyBtn" class="btn ghost hidden navbtn" onclick="openHistory()">🔎 Historial</button>
+<button id="staffBtn" class="btn ghost hidden navbtn" onclick="openStaffPerformance()">👥 Personal</button>
+<button id="inventoryBtn" class="btn ghost hidden navbtn" onclick="openInventory()">📦 Inventario</button>
+<button id="expensesBtn" class="btn ghost hidden navbtn" onclick="openExpenses()">💸 Gastos</button>
+<button id="menuAdminBtn" class="btn ghost hidden navbtn" onclick="openMenuAdmin()">🍔 Menú</button>
+<button id="customersBtn" class="btn ghost hidden navbtn" onclick="openCustomers()">⭐ Clientes</button><button id="clearBtn" class="btn danger hidden" onclick="clearTestOrders()">🧹 Limpiar pruebas</button><button class="btn ghost" onclick="loadOrders()">↻ Actualizar</button><button id="soundBtn" class="btn ghost" onclick="enableSound()">🔔 Activar alertas</button><button id="pushBtn" class="btn ghost" onclick="enablePush()">📲 Activar notificaciones</button><span id="syncText" class="pill">Conectado</span><div id="salesBox" class="salesBox hidden"><div class="small">💰 VENTAS REALIZADAS</div><div id="salesTotal" class="big">$0.00</div><div id="salesCount" class="small">0 pedidos entregados</div></div></div><div id="board" class="board"></div></main></div>
+<div id="newModal" class="modal hidden"><div class="box"><h2>Pedido nuevo</h2><div class="row"><div><label>Cliente</label><input id="client"></div><div><label>Teléfono</label><input id="phone"></div></div><label>Pedido</label><textarea id="items" placeholder="Ej. 2 Papi Crispy"></textarea><div class="row"><div><label>Total</label><input id="total" type="number" step="0.01"></div><div><label>Tiempo estimado (min)</label><input id="eta" type="number" value="30"></div></div><label>Tipo de pedido</label><select id="fulfillment" onchange="toggleAddress()"><option value="delivery">🏠 Domicilio</option><option value="pickup">🛍️ Retira en local</option><option value="local">🍽️ Consume en local</option></select><div id="addressWrap"><label>Mz / Villa / Dirección</label><input id="address"></div><label>Forma de pago</label><select id="payment" onchange="toggleMixed()"><option value="cash">💵 Efectivo</option><option value="transfer">📲 Transferencia</option><option value="mixed">💵📲 Pago mixto</option></select><div id="mixedWrap" class="hidden"><div class="row"><div><label>💵 Efectivo</label><input id="mixedCash" type="number" step="0.01" min="0"></div><div><label>📲 Transferencia</label><input id="mixedTransfer" type="number" step="0.01" min="0"></div></div><div id="mixedCheck" class="muted"></div></div><div id="raffleHint" class="msg hidden"></div><div id="receiptWrap" class="hidden"><label>📎 Comprobante de transferencia (opcional al crear)</label><input id="receiptFile" type="file" accept="image/*,application/pdf"><div class="tiny">Quedará POR VERIFICAR hasta que Administración lo confirme.</div></div><label>Observaciones para cocina</label><textarea id="notes"></textarea><div class="row" style="margin-top:12px"><button class="btn primary" onclick="createOrder()">GUARDAR PEDIDO</button><button class="btn ghost" onclick="closeNew()">Cancelar</button></div></div></div>
+<div id="usersModal" class="modal hidden"><div class="box"><h2>Usuarios</h2><p class="muted">Las cuentas nuevas de Cocina o Delivery quedan pendientes hasta que tú las actives.</p><div id="usersList"></div><button class="btn ghost" style="width:100%;margin-top:10px" onclick="closeUsers()">Cerrar</button></div></div>
+<div id="reportsModal" class="modal hidden"><div class="box"><h2>📅 Caja y cierres</h2><p class="muted">Cada día queda separado. La apertura no cuenta como venta.</p><label>Fecha</label><input id="reportDate" type="date"><label>💰 Apertura de caja</label><div class="row"><input id="openingCash" type="number" step="0.01" min="0"><button class="btn primary" onclick="saveOpening()">GUARDAR APERTURA</button></div><div id="dailyBox" class="msg">Cargando…</div><label>💵 Efectivo contado al cierre</label><input id="countedCash" type="number" step="0.01" min="0"><div class="row" style="margin-top:10px"><button class="btn ghost" onclick="loadDailyReport()">ACTUALIZAR</button><button class="btn primary" onclick="closeSelectedDay()">CERRAR DÍA</button></div><hr style="border-color:#333;margin:18px 0"><label>📊 Mes</label><input id="reportMonth" type="month"><button class="btn ghost" style="width:100%;margin-top:8px" onclick="loadMonth()">VER REPORTE MENSUAL</button><div id="monthSummary" class="msg hidden"></div><div id="closingList"></div><button class="btn ghost" style="width:100%;margin-top:12px" onclick="closeReports()">Cerrar</button></div></div>
+<div id="historyModal" class="modal hidden"><div class="box"><div class="row"><h2>🔎 Historial de pedidos</h2><button class="btn ghost" onclick="closeModalId('historyModal')">✕</button></div>
+<div class="row"><input id="historySearch" placeholder="Nombre, teléfono o # pedido"><input id="historyDate" type="date"></div>
+<button class="btn primary" style="width:100%" onclick="loadHistory()">BUSCAR</button><div id="historyList"></div></div></div>
+
+<div id="incidentModal" class="modal hidden"><div class="box"><h2>⚠️ Reportar problema</h2><input id="incidentOrderId" type="hidden">
+<label>Responsable</label><select id="incidentResponsible"></select><label>Tipo</label><select id="incidentCategory"><option value="preparation">Preparación</option><option value="missing">Producto faltante</option><option value="wrong">Pedido equivocado</option><option value="delivery">Delivery</option><option value="other">Otro</option></select>
+<label>¿Qué pasó?</label><textarea id="incidentDescription"></textarea><div class="row"><button class="btn primary" onclick="saveIncident()">GUARDAR</button><button class="btn ghost" onclick="closeModalId('incidentModal')">Cancelar</button></div></div></div>
+
+<div id="staffPerfModal" class="modal hidden"><div class="box"><div class="row"><h2>👥 Registro del personal</h2><button class="btn ghost" onclick="closeModalId('staffPerfModal')">✕</button></div><div id="staffPerfList"></div></div></div>
+
+<div id="inventoryModal" class="modal hidden"><div class="box"><div class="row"><h2>📦 Inventario</h2><button class="btn ghost" onclick="closeModalId('inventoryModal')">✕</button></div>
+<div class="row"><input id="invName" placeholder="Insumo"><input id="invUnit" placeholder="Unidad, kg, saco..."></div><div class="row"><input id="invStock" type="number" step="0.001" placeholder="Stock"><input id="invMin" type="number" step="0.001" placeholder="Mínimo"></div>
+<button class="btn primary" style="width:100%" onclick="saveInventory()">＋ GUARDAR INSUMO</button><div id="inventoryList"></div></div></div>
+
+<div id="expensesModal" class="modal hidden"><div class="box"><div class="row"><h2>💸 Gastos del día</h2><button class="btn ghost" onclick="closeModalId('expensesModal')">✕</button></div>
+<div class="row"><input id="expenseDate" type="date"><input id="expenseAmount" type="number" step="0.01" placeholder="$"></div><input id="expenseConcept" placeholder="Gas, hielo, transporte...">
+<button class="btn primary" style="width:100%" onclick="saveExpense()">＋ REGISTRAR GASTO</button><div id="expensesList"></div></div></div>
+
+<div id="menuAdminModal" class="modal hidden"><div class="box"><div class="row"><h2>🍔 Menú del cliente</h2><button class="btn ghost" onclick="closeModalId('menuAdminModal')">✕</button></div>
+<input id="menuId" type="hidden"><div class="row"><input id="menuName" placeholder="Producto"><input id="menuPrice" type="number" step="0.01" placeholder="Precio"></div>
+<input id="menuCategory" placeholder="Categoría"><input id="menuDescription" placeholder="Descripción"><input id="menuImage" placeholder="URL de foto (opcional)">
+<div class="row"><label><input id="menuSold" type="checkbox" style="width:auto"> AGOTADO</label><label><input id="menuActive" type="checkbox" style="width:auto" checked> ACTIVO</label></div>
+<button class="btn primary" style="width:100%" onclick="saveMenuItem()">GUARDAR PRODUCTO</button><div id="menuAdminList"></div></div></div>
+
+<div id="customersModal" class="modal hidden"><div class="box"><div class="row"><h2>⭐ Clientes frecuentes</h2><button class="btn ghost" onclick="closeModalId('customersModal')">✕</button></div><div id="customersList"></div></div></div>
+
+<div id="customerMenuModal" class="modal hidden"><div class="box" style="width:min(900px,100%)"><div class="row"><div><div class="brand">ENTRE <span>FUEGOS</span> 🔥</div><div class="muted">Haz tu pedido</div></div><button class="btn ghost" onclick="closeModalId('customerMenuModal')">✕</button></div>
+<div id="customerMenuGrid" class="menuGrid"></div><hr style="border-color:#333"><h3>🛒 Tu pedido</h3><div id="cartList" class="panel">Aún no has elegido productos.</div>
+<div class="row"><input id="custName" placeholder="Nombre"><input id="custPhone" placeholder="Teléfono"></div>
+<label>Entrega</label><select id="custFulfillment" onchange="toggleCustomerAddress()"><option value="delivery">🏠 Delivery</option><option value="pickup">🛍️ Retiro en local</option><option value="local">🍽️ Consume en local</option></select>
+<div id="custAddressWrap"><input id="custAddress" placeholder="Mz / Villa / Dirección"></div>
+<label>Pago</label><select id="custPayment" onchange="toggleCustomerReceipt()"><option value="cash">💵 Efectivo</option><option value="transfer">📲 Transferencia</option></select>
+<div id="custReceiptWrap" class="hidden"><label>📎 Sube tu comprobante</label><input id="custReceipt" type="file" accept="image/*,application/pdf"></div>
+<label>Observaciones</label><textarea id="custNotes" placeholder="Sin cebolla, salsa aparte..."></textarea>
+<div id="custEta" class="msg">⏱ Tiempo estimado: 30 min aprox.</div><button class="btn primary" style="width:100%" onclick="submitCustomerOrder()">CONFIRMAR PEDIDO</button></div></div>
+
+<div id="raffleModal" class="modal hidden"><div class="box"><div class="row"><h2>🎟️ Boletos de rifa</h2><button class="btn ghost" onclick="closeModalId('raffleModal')">✕</button></div><div id="raffleList"></div></div></div>
+<div id="printArea" class="printOnly"></div>
+<script>
+const SUPABASE_URL='https://vhqcbfqyhltaxlxxamdp.supabase.co'; const SUPABASE_KEY='sb_publishable_ncz32RHUkdlx3cwR5iDEIw_goKWVOqv';
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const firebaseConfig = {
+  apiKey: "AIzaSyAoAc9IIggSXbunRcHuEU6MuzeUCDH88Uo",
+  authDomain: "gestionlink-entre-fuegos-2.firebaseapp.com",
+  projectId: "gestionlink-entre-fuegos-2",
+  storageBucket: "gestionlink-entre-fuegos-2.firebasestorage.app",
+  messagingSenderId: "496848285254",
+  appId: "1:496848285254:web:781f82bb067c25258ce447"
+};
+const FCM_VAPID_KEY='BOOmHZmPeDuYjrb6qaQnBK2AUFYiibUGoDAiw1puIiuZlaDAI_f0PP-Tc-lCKqnGFZqUKbK_sxe50g5Dj5UzF4U';
+let messaging=null;
+
+async function enablePush(){
+  if(!('serviceWorker' in navigator)||!('Notification' in window))
+    return alert('Este navegador no permite notificaciones web.');
+  try{
+    const permission=await Notification.requestPermission();
+    if(permission!=='granted')
+      return alert('Debes pulsar PERMITIR para recibir notificaciones.');
+    const reg=await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    messaging=firebase.messaging();
+    const token=await messaging.getToken({vapidKey:FCM_VAPID_KEY,serviceWorkerRegistration:reg});
+    if(!token) return alert('No pude registrar este teléfono. Intenta otra vez.');
+    const {error}=await sb.rpc('gl_register_push_token',{p_token:token,p_user_agent:navigator.userAgent});
+    if(error) throw error;
+    localStorage.setItem('gl_push_enabled','1');
+    $('pushBtn').textContent='📲 Notificaciones activas';
+    alert('✅ Este teléfono ya recibirá notificaciones de GestiónLink.');
+  }catch(e){
+    console.error(e);
+    alert('No pude activar las notificaciones: '+(e.message||e));
+  }
+}
+
+async function initPushForeground(){
+  try{
+    if(!('serviceWorker' in navigator) || Notification.permission!=='granted') return;
+    const reg=await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    messaging=firebase.messaging();
+    messaging.onMessage(payload=>{
+      const kind=payload?.data?.kind||'new';
+      if(soundEnabled) playAlert(kind==='ready'?'ready':'new');
+      if(navigator.vibrate) navigator.vibrate([350,120,350,120,500]);
+    });
+    if(localStorage.getItem('gl_push_enabled')==='1')
+      $('pushBtn').textContent='📲 Notificaciones activas';
+  }catch(e){console.warn('Push init:',e)}
+}
+
+async function sendPush(kind,orderNumber=''){
+  try{
+    const {data,error}=await sb.functions.invoke('gestionlink-push',{
+      body:{kind,order_number:orderNumber}
+    });
+    if(error) console.warn('Push:',error);
+    return data;
+  }catch(e){console.warn('Push:',e)}
+}
+
+let profile=null; let orders=[]; let firstSync=true; let previousStates=new Map(); let audioCtx=null; let soundEnabled=false; let loadingOrders=false;
+const $=id=>document.getElementById(id); const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+function msg(t){$('authMsg').textContent=t;$('authMsg').classList.remove('hidden')} function money(x){return '$'+Number(x||0).toFixed(2)}
+function getAudio(){
+  if(!audioCtx){const Ctx=window.AudioContext||window.webkitAudioContext; if(!Ctx)return null; audioCtx=new Ctx();}
+  return audioCtx;
+}
+async function enableSound(){
+  const ctx=getAudio();
+  if(!ctx)return alert('Este navegador no permite sonido.');
+  try{
+    await ctx.resume();
+    soundEnabled=true;
+    localStorage.setItem('gl_sound_enabled','1');
+    $('soundBtn').textContent='🔔 Alertas activas';
+    playAlert('test');
+    setTimeout(()=>checkPendingRoleAlerts(true),700);
+  }catch(e){
+    alert('No pude activar el sonido. Toca de nuevo el botón.');
+  }
+}
+function tone(ctx,start,freq,dur,vol){
+  const osc=ctx.createOscillator(),gain=ctx.createGain();
+  osc.type='square';osc.frequency.setValueAtTime(freq,start);gain.gain.setValueAtTime(0.0001,start);gain.gain.exponentialRampToValueAtTime(vol,start+0.02);gain.gain.exponentialRampToValueAtTime(0.0001,start+dur);osc.connect(gain);gain.connect(ctx.destination);osc.start(start);osc.stop(start+dur+0.03);
+}
+function playAlert(kind='new'){
+  if(!soundEnabled)return;
+  const ctx=getAudio(); if(!ctx||ctx.state!=='running')return;
+  const t=ctx.currentTime+0.03;
+  // Alarma reforzada: más larga, alterna frecuencias y usa el máximo nivel permitido por Web Audio.
+  const bursts = kind==='ready' ? 8 : 7;
+  for(let i=0;i<bursts;i++){
+    const x=i*.42;
+    tone(ctx,t+x,880,.20,1.0);
+    tone(ctx,t+x+.12,1480,.22,1.0);
+    tone(ctx,t+x+.25,1120,.18,1.0);
+  }
+  if(navigator.vibrate){
+    navigator.vibrate(kind==='ready'
+      ? [350,120,350,120,350,120,500]
+      : [300,100,300,100,300,100,450]);
+  }
+}
+function roleAlertStorageKey(){
+  return 'gl_seen_'+(profile?.business_id||'biz')+'_'+(profile?.role||'role');
+}
+function getSeenAlerts(){
+  try{return new Set(JSON.parse(localStorage.getItem(roleAlertStorageKey())||'[]'))}catch(e){return new Set()}
+}
+function saveSeenAlerts(seen){
+  try{localStorage.setItem(roleAlertStorageKey(),JSON.stringify([...seen].slice(-300)))}catch(e){}
+}
+function eligibleAlertOrders(list){
+  if(profile?.role==='admin'||profile?.role==='kitchen') return list.filter(o=>o.status==='new');
+  if(profile?.role==='delivery') return list.filter(o=>o.status==='ready');
+  return [];
+}
+function checkPendingRoleAlerts(forceCurrent=false){
+  if(!profile||!orders)return;
+  const seen=getSeenAlerts(),eligible=eligibleAlertOrders(orders);
+  const unseen=eligible.filter(o=>!seen.has(String(o.id)));
+  if(unseen.length){
+    unseen.forEach(o=>seen.add(String(o.id)));
+    saveSeenAlerts(seen);
+    if(soundEnabled){
+      if(profile.role==='delivery'){
+        playAlert('ready');
+        $('syncText').textContent='🛵 '+unseen.length+' pedido'+(unseen.length===1?'':'s')+' listo'+(unseen.length===1?'':'s');
+      }else{
+        playAlert('new');
+        $('syncText').textContent='🔔 '+unseen.length+' pedido'+(unseen.length===1?'':'s')+' nuevo'+(unseen.length===1?'':'s');
+      }
+    }else if(forceCurrent){
+      $('syncText').textContent='🔔 Hay pedidos pendientes · activa alertas';
+    }
+  }
+}
+function detectRoleAlerts(newOrders){
+  orders=newOrders||[];
+  checkPendingRoleAlerts(false);
+}
+function restoreSoundPreference(){
+  if(localStorage.getItem('gl_sound_enabled')==='1'){$('soundBtn').textContent='🔔 Toca para reactivar alertas';}
+}
+document.addEventListener('click',async()=>{if(localStorage.getItem('gl_sound_enabled')==='1'&&!soundEnabled){const ctx=getAudio();try{await ctx.resume();soundEnabled=true;$('soundBtn').textContent='🔔 Alertas activas';setTimeout(()=>checkPendingRoleAlerts(true),300);}catch(e){}}},{once:true});
+async function signup(){const email=$('email').value.trim(),password=$('password').value; if(!email||password.length<6)return msg('Escribe un correo y una contraseña de mínimo 6 caracteres.'); const {data,error}=await sb.auth.signUp({email,password}); if(error)return msg(error.message); if(data.session){msg('Cuenta creada. Ahora vamos a activar tu perfil.'); await afterAuth();}else msg('Cuenta creada. Revisa tu correo para confirmar la cuenta y luego pulsa ENTRAR.');}
+async function login(){const {error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value}); if(error)return msg('No pude entrar: '+error.message); await afterAuth();}
+async function logout(){await sb.auth.signOut();profile=null;$('app').classList.add('hidden');$('authScreen').classList.remove('hidden');$('claimBox').classList.add('hidden');$('requestBox').classList.add('hidden');}
+async function afterAuth(){const {data,error}=await sb.rpc('gl_my_profile'); if(error)return msg(error.message); if(data?.active){profile=data;showApp();return} $('claimBox').classList.add('hidden');$('requestBox').classList.remove('hidden');msg('Tu cuenta existe, pero todavía no tiene un perfil activo en GestiónLink.');}
+async function claimAdmin(){msg('La administración de Entre Fuegos ya está configurada.');}
+async function requestAccess(){const {error}=await sb.rpc('gl_request_access',{p_name:$('requestName').value.trim(),p_role:$('requestRole').value});if(error)return msg(error.message);msg('Solicitud enviada. La administradora debe activarte.');}
+function showApp(){$('authScreen').classList.add('hidden');$('app').classList.remove('hidden');$('rolePill').textContent=(profile.role==='admin'?'👑 ':profile.role==='kitchen'?'👨‍🍳 ':'🛵 ')+profile.name;$('newOrderBtn').classList.toggle('hidden',profile.role!=='admin');$('usersBtn').classList.toggle('hidden',profile.role!=='admin');$('closeDayBtn').classList.toggle('hidden',profile.role!=='admin');['historyBtn','staffBtn','inventoryBtn','expensesBtn','menuAdminBtn','customersBtn'].forEach(id=>$(id).classList.toggle('hidden',profile.role!=='admin'));$('clearBtn').classList.toggle('hidden',profile.role!=='admin');$('salesBox').classList.toggle('hidden',profile.role!=='admin');firstSync=true;previousStates=new Map();restoreSoundPreference();initPushForeground();loadOrders();}
+async function loadOrders(){
+ if(loadingOrders||!profile)return;
+ loadingOrders=true;
+ try{
+   const {data,error}=await sb.rpc('gl_list_orders');
+   if(error){$('syncText').textContent='Error de conexión';return;}
+   const incoming=data||[];
+   orders=incoming;
+   detectRoleAlerts(incoming);
+   render();updateSalesSummary();
+   if(!$('syncText').textContent.includes('🔔')&&!$('syncText').textContent.includes('🛵'))
+     $('syncText').textContent='Actualizado '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+ } finally {loadingOrders=false;}
+}
+function updateSalesSummary(){
+  if(!profile || profile.role!=='admin') return;
+  const completed=orders.filter(o=>o.status==='done');
+  const total=completed.reduce((sum,o)=>sum+Number(o.total||0),0);
+  $('salesTotal').textContent=money(total);
+  $('salesCount').textContent=completed.length+' pedido'+(completed.length===1?'':'s')+' entregado'+(completed.length===1?'':'s');
+}
+const titles={new:'NUEVOS',prep:'PREPARANDO',ready:'LISTOS',route:'🛵 EN CAMINO',done:'ENTREGADOS'};
+function render(){let statuses=profile.role==='admin'?['new','prep','ready','route','done']:profile.role==='kitchen'?['new','prep']:['ready','route'];$('board').innerHTML=statuses.map(s=>`<section class="col"><h3>${titles[s]} <span>${orders.filter(o=>o.status===s).length}</span></h3>${orders.filter(o=>o.status===s).map(card).join('')||'<div class="muted">Sin pedidos</div>'}</section>`).join('')}
+function payLabel(o){let p=o.payment_method==='cash'?'EFECTIVO':o.payment_method==='transfer'?'TRANSFERENCIA':'TARJETA PAGADA';if(o.payment_method==='cash'&&o.cash_received)p+=' · paga con '+money(o.cash_received)+(o.change_due!=null?' · cambio '+money(o.change_due):'');return p}
+function receiptLabel(o){
+ if(!o.receipt_url)return o.payment_method==='transfer'||o.payment_method==='mixed'?'📎 Sin comprobante':'';
+ const s=o.receipt_status||'pending';
+ return s==='verified'?'✅ Transferencia verificada':s==='rejected'?'❌ Comprobante rechazado':'⏳ Transferencia por verificar';
+}
+function card(o){
+ let info='';
+ if(profile.role==='admin'){
+   const prepared=o.prepared_by||'—',dispatched=o.dispatched_by||'—',routeBy=o.route_by||'—',delivered=o.delivered_by||'—';
+   const receipt=receiptLabel(o);
+   info=`<div class="admininfo">Cliente: <b>${esc(o.customer_name||'—')}</b><br>Tel: ${esc(o.customer_phone||'—')}<br>Total: <b>${money(o.total)}</b><br>${o.address?'Dirección: '+esc(o.address)+'<br>':''}Pago: ${esc(payLabel(o))}${receipt?'<br>'+esc(receipt):''}${o.notes?'<br>Obs: '+esc(o.notes):''}</div>
+   <div class="responsibility">👨‍🍳 Tomó/preparó: <b>${esc(prepared)}</b><br>📦 Marcó LISTO: <b>${esc(dispatched)}</b><br>🛵 Salió con: <b>${esc(routeBy)}</b><br>✅ Entregó: <b>${esc(delivered)}</b></div>`;
+ }
+ if(profile.role==='delivery'){
+   info=`${o.address?'<div class="address">📍 '+esc(o.address)+'</div>':''}<div class="pay">💳 ${esc(payLabel(o))}</div>`;
+ }
+ let next=o.status==='new'?'prep':o.status==='prep'?'ready':o.status==='ready'?'route':o.status==='route'?'done':null;
+ let allowed=next&&((profile.role==='admin')||(profile.role==='kitchen'&&['prep','ready'].includes(next))||(profile.role==='delivery'&&['route','done'].includes(next)));
+ let label=next==='prep'?'TOMAR / PREPARAR':next==='ready'?'LISTO':next==='route'?'🛵 EN CAMINO':next==='done'?'✅ ENTREGADO':'';
+ let extras='';
+ if(profile.role==='admin'){
+   if(o.receipt_url) extras+=`<button class="btn ghost" onclick="viewReceipt('${o.id}','${encodeURIComponent(o.receipt_url)}')">📎 Comprobante</button>`;
+   if(o.receipt_url && o.receipt_status!=='verified') extras+=`<button class="btn ghost" onclick="verifyPayment('${o.id}',true)">✅ Confirmar pago</button>`;
+   extras+=`<button class="btn ghost" onclick="openIncident('${o.id}')">⚠️ Problema</button>`;
+   if(o.fulfillment==='local' && Number(o.total)>=5) extras+=`<button class="btn ghost" onclick="openRaffle('${o.id}')">🎟️ Rifa</button>`;
+ }
+ return `<article class="card"><div class="order">#${esc(o.order_number)}</div><div class="items">${esc(o.items_text)}</div>${info}<div class="actions">${allowed?`<button class="btn primary" onclick="moveOrder('${o.id}','${next}')">${label}</button>`:''}${extras}</div></article>`;
+}
+async function moveOrder(id,next){
+ const before=orders.find(o=>String(o.id)===String(id));
+ const orderNumber=before?.order_number||'';
+ const {error}=await sb.rpc('gl_move_order_v3',{p_order_id:id,p_next_status:next});
+ if(error)return alert(error.message);
+ if(next==='ready') await sendPush('ready',orderNumber);
+ await loadOrders();
+}
+function openNew(){$('newModal').classList.remove('hidden');toggleAddress();updateRaffleHint()}
+function closeNew(){$('newModal').classList.add('hidden')}
+function toggleAddress(){
+ const kind=$('fulfillment').value;
+ $('addressWrap').classList.toggle('hidden',kind!=='delivery');
+ updateRaffleHint();
+}
+function updateRaffleHint(){
+ const box=$('raffleHint'); if(!box)return;
+ const local=$('fulfillment').value==='local', total=Number($('total').value||0);
+ if(local){
+   const tickets=Math.floor(total/5);
+   box.classList.remove('hidden');
+   box.textContent=tickets>0?'🎟️ Rifa: '+tickets+' boleto'+(tickets===1?'':'s')+' por esta compra.':'🎟️ Rifa: participa desde $5 de consumo local.';
+ } else box.classList.add('hidden');
+}
+$('total').addEventListener('input',updateRaffleHint);
+function toggleMixed(){
+ const mode=$('payment').value,mixed=mode==='mixed';
+ $('mixedWrap').classList.toggle('hidden',!mixed);
+ $('receiptWrap').classList.toggle('hidden',!(mode==='transfer'||mode==='mixed'));
+ checkMixed();
+}
+function checkMixed(){if($('payment').value!=='mixed')return;const total=Number($('total').value||0),c=Number($('mixedCash').value||0),tr=Number($('mixedTransfer').value||0),diff=total-c-tr;$('mixedCheck').textContent=Math.abs(diff)<.005?'✅ Pago completo':diff>0?'Falta '+money(diff):'Excede '+money(-diff)}
+['total','mixedCash','mixedTransfer'].forEach(id=>$(id).addEventListener('input',()=>{updateRaffleHint();checkMixed()}));
+async function createOrder(){
+ const mode=$('payment').value,total=Number($('total').value||0);
+ let c=0,tr=0;
+ if(mode==='mixed'){
+   c=Number($('mixedCash').value||0);tr=Number($('mixedTransfer').value||0);
+   if(Math.abs(c+tr-total)>.005)return alert('El efectivo y la transferencia deben sumar exactamente '+money(total));
+ }
+ const args={p_customer_name:$('client').value.trim(),p_customer_phone:$('phone').value.trim(),p_items_text:$('items').value.trim(),p_total:total,p_fulfillment:$('fulfillment').value,p_address:$('address').value.trim(),p_payment_mode:mode,p_cash_amount:c,p_transfer_amount:tr,p_eta_minutes:Number($('eta').value||30),p_notes:$('notes').value.trim()};
+ if(!args.p_items_text)return alert('Escribe el pedido.');
+ const {data,error}=await sb.rpc('gl_create_order_v2',args);
+ if(error)return alert(error.message);
+ await loadOrders();
+ const newest=orders.filter(o=>o.status==='new').sort((a,b)=>Number(b.order_number||0)-Number(a.order_number||0))[0];
+ await sendPush('new',newest?.order_number||data?.order_number||'');
+ if(newest){
+   const f=$('receiptFile').files[0];
+   if(f && (mode==='transfer'||mode==='mixed')) await uploadReceipt(newest.id,f,false);
+   if($('fulfillment').value==='local' && total>=5) await sb.rpc('gl_ensure_raffle_tickets',{p_order_id:newest.id});
+ }
+ closeNew();
+ ['client','phone','items','total','address','mixedCash','mixedTransfer','notes'].forEach(x=>$(x).value='');
+ $('receiptFile').value='';$('payment').value='cash';toggleMixed();
+}
+
+function closeModalId(id){$(id).classList.add('hidden')}
+function mins(a,b){if(!a||!b)return '—';return Math.max(0,Math.round((new Date(b)-new Date(a))/60000))+' min'}
+
+async function uploadReceipt(orderId,file,isPublic=false,phone=''){
+ const ext=(file.name.split('.').pop()||'jpg').replace(/[^a-zA-Z0-9]/g,'');
+ const prefix=isPublic?'public':profile.business_id;
+ const path=`${prefix}/${orderId}/${crypto.randomUUID()}.${ext}`;
+ const {error}=await sb.storage.from('transfer-receipts').upload(path,file,{upsert:false,contentType:file.type||undefined});
+ if(error)throw error;
+ if(isPublic){
+   const r=await sb.rpc('gl_public_set_receipt',{p_order_id:orderId,p_phone:phone,p_path:path}); if(r.error)throw r.error;
+ }else{
+   const r=await sb.rpc('gl_set_receipt',{p_order_id:orderId,p_path:path}); if(r.error)throw r.error;
+ }
+ return path;
+}
+async function viewReceipt(orderId,encodedPath){
+ const path=decodeURIComponent(encodedPath);
+ const {data,error}=await sb.storage.from('transfer-receipts').createSignedUrl(path,300);
+ if(error)return alert(error.message);
+ window.open(data.signedUrl,'_blank');
+}
+async function verifyPayment(orderId,approved){
+ const {error}=await sb.rpc('gl_verify_payment',{p_order_id:orderId,p_approved:approved});
+ if(error)return alert(error.message);await loadOrders();
+}
+
+async function openHistory(){$('historyModal').classList.remove('hidden');$('historyDate').value='';$('historySearch').value='';await loadHistory()}
+async function loadHistory(){
+ const q=$('historySearch').value.trim(),d=$('historyDate').value||null;
+ const {data,error}=await sb.rpc('gl_order_history',{p_search:q||null,p_from:d,p_to:d});if(error)return alert(error.message);
+ $('historyList').innerHTML=(data||[]).map(o=>`<div class="panel"><b>#${esc(o.order_number)} · ${esc(o.customer_name||'—')} · ${money(o.total)}</b><br><span class="tiny">${new Date(o.created_at).toLocaleString()}</span><div>${esc(o.items_text)}</div><div class="tiny">👨‍🍳 ${esc(o.prepared_by||'—')} · 📦 ${esc(o.dispatched_by||'—')} · 🛵 ${esc(o.route_by||'—')} · ✅ ${esc(o.delivered_by||'—')}</div><div class="tiny">Preparación: ${mins(o.prep_at,o.ready_at)} · Espera delivery: ${mins(o.ready_at,o.route_at)} · Entrega: ${mins(o.route_at,o.done_at)} · Total: ${mins(o.created_at,o.done_at)}</div></div>`).join('')||'<div class="muted">Sin resultados.</div>';
+}
+async function openIncident(orderId){
+ $('incidentOrderId').value=orderId;
+ const {data,error}=await sb.rpc('gl_list_users');if(error)return alert(error.message);
+ $('incidentResponsible').innerHTML=(data||[]).filter(u=>u.role!=='admin').map(u=>`<option value="${u.id}">${esc(u.name)} · ${u.role==='kitchen'?'Cocina':'Delivery'}</option>`).join('');
+ $('incidentDescription').value='';$('incidentModal').classList.remove('hidden');
+}
+async function saveIncident(){
+ const {error}=await sb.rpc('gl_incident_add',{p_order_id:$('incidentOrderId').value,p_responsible_user_id:$('incidentResponsible').value,p_category:$('incidentCategory').value,p_description:$('incidentDescription').value.trim()});
+ if(error)return alert(error.message);closeModalId('incidentModal');alert('⚠️ Problema registrado.');
+}
+async function openStaffPerformance(){$('staffPerfModal').classList.remove('hidden');const {data,error}=await sb.rpc('gl_staff_performance');if(error)return alert(error.message);$('staffPerfList').innerHTML=(data||[]).map(x=>`<div class="panel"><b>${esc(x.name)}</b> · ${x.role==='kitchen'?'Cocina':x.role==='delivery'?'Delivery':'Admin'}<br>👨‍🍳 Preparó: ${x.prepared} · 📦 Despachó: ${x.dispatched} · 🛵 Entregó: ${x.delivered}<br><span class="${Number(x.incidents)>0?'bad':'good'}">⚠️ Problemas: ${x.incidents}</span></div>`).join('')}
+async function openInventory(){$('inventoryModal').classList.remove('hidden');await loadInventory()}
+async function loadInventory(){const {data,error}=await sb.rpc('gl_inventory_list');if(error)return alert(error.message);$('inventoryList').innerHTML=(data||[]).map(i=>`<div class="userline"><div><b>${esc(i.name)}</b><div class="tiny">${i.stock} ${esc(i.unit)} · mínimo ${i.min_stock}</div></div><b class="${Number(i.stock)<=Number(i.min_stock)?'bad':'good'}">${Number(i.stock)<=Number(i.min_stock)?'⚠️ BAJO':'OK'}</b></div>`).join('')||'<div class="muted">Sin insumos.</div>'}
+async function saveInventory(){const args={p_id:null,p_name:$('invName').value.trim(),p_unit:$('invUnit').value.trim(),p_stock:Number($('invStock').value||0),p_min_stock:Number($('invMin').value||0)};if(!args.p_name)return alert('Escribe el insumo.');const {error}=await sb.rpc('gl_inventory_save',args);if(error)return alert(error.message);['invName','invUnit','invStock','invMin'].forEach(id=>$(id).value='');await loadInventory()}
+async function openExpenses(){$('expensesModal').classList.remove('hidden');$('expenseDate').value=localDateISO();await loadExpenses()}
+async function loadExpenses(){const d=$('expenseDate').value||localDateISO();const {data,error}=await sb.rpc('gl_expense_list',{p_from:d,p_to:d});if(error)return alert(error.message);const rows=data||[],total=rows.reduce((s,x)=>s+Number(x.amount),0);$('expensesList').innerHTML=`<div class="msg">Total gastos del día: <b>${money(total)}</b></div>`+rows.map(x=>`<div class="userline"><span>${esc(x.concept)}</span><b>${money(x.amount)}</b></div>`).join('')}
+async function saveExpense(){const d=$('expenseDate').value||localDateISO(),concept=$('expenseConcept').value.trim(),amount=Number($('expenseAmount').value||0);if(!concept||amount<=0)return alert('Escribe concepto y valor.');const {error}=await sb.rpc('gl_expense_add',{p_date:d,p_concept:concept,p_amount:amount});if(error)return alert(error.message);$('expenseConcept').value='';$('expenseAmount').value='';await loadExpenses()}
+async function openMenuAdmin(){$('menuAdminModal').classList.remove('hidden');await loadMenuAdmin()}
+async function loadMenuAdmin(){const {data,error}=await sb.rpc('gl_menu_list_admin');if(error)return alert(error.message);$('menuAdminList').innerHTML=(data||[]).map(m=>`<div class="userline"><div><b>${esc(m.name)}</b><div class="tiny">${esc(m.category)} · ${money(m.price)} · ${m.sold_out?'AGOTADO':'Disponible'}</div></div><button class="btn ghost" onclick='editMenu(${JSON.stringify(JSON.stringify(m))})'>Editar</button></div>`).join('')}
+function editMenu(s){const m=JSON.parse(s);$('menuId').value=m.id;$('menuName').value=m.name;$('menuPrice').value=m.price;$('menuCategory').value=m.category;$('menuDescription').value=m.description||'';$('menuImage').value=m.image_url||'';$('menuSold').checked=!!m.sold_out;$('menuActive').checked=!!m.active}
+async function saveMenuItem(){const id=$('menuId').value||null,args={p_id:id,p_name:$('menuName').value.trim(),p_description:$('menuDescription').value.trim(),p_price:Number($('menuPrice').value||0),p_category:$('menuCategory').value.trim(),p_image_url:$('menuImage').value.trim()||null,p_sold_out:$('menuSold').checked,p_active:$('menuActive').checked};if(!args.p_name||args.p_price<0)return alert('Revisa producto y precio.');const {error}=await sb.rpc('gl_menu_save',args);if(error)return alert(error.message);['menuId','menuName','menuPrice','menuCategory','menuDescription','menuImage'].forEach(id=>$(id).value='');$('menuSold').checked=false;$('menuActive').checked=true;await loadMenuAdmin()}
+async function openCustomers(){$('customersModal').classList.remove('hidden');const {data,error}=await sb.rpc('gl_customers_summary');if(error)return alert(error.message);$('customersList').innerHTML=(data||[]).map((c,i)=>`<div class="panel">${i<5?'⭐ ':''}<b>${esc(c.name||'Sin nombre')}</b><br>📞 ${esc(c.phone||'—')} · ${c.orders} pedidos · <b>${money(c.total_spent)}</b><br><span class="tiny">Última compra: ${c.last_order?new Date(c.last_order).toLocaleDateString():'—'}</span></div>`).join('')}
+
+let publicMenu=[],cart={};
+async function openCustomerMenu(){$('customerMenuModal').classList.remove('hidden');const {data,error}=await sb.rpc('gl_public_menu');if(error)return alert(error.message);publicMenu=data||[];renderCustomerMenu();renderCart();toggleCustomerAddress();toggleCustomerReceipt()}
+function renderCustomerMenu(){$('customerMenuGrid').innerHTML=publicMenu.map(m=>`<div class="menuItem ${m.sold_out?'sold':''}">${m.image_url?`<img src="${esc(m.image_url)}" style="width:100%;height:120px;object-fit:cover;border-radius:8px">`:''}<b>${esc(m.name)}</b><div class="tiny">${esc(m.description||'')}</div><div class="menuPrice">${money(m.price)}</div>${m.sold_out?'<b class="bad">AGOTADO</b>':`<button class="btn primary" onclick="addCart('${m.id}')">＋ Agregar</button>`}</div>`).join('')||'<div class="muted">Menú todavía no cargado.</div>'}
+function addCart(id){cart[id]=(cart[id]||0)+1;renderCart()}
+function changeCart(id,n){cart[id]=Math.max(0,(cart[id]||0)+n);if(!cart[id])delete cart[id];renderCart()}
+function cartTotals(){let total=0,lines=[];for(const [id,q] of Object.entries(cart)){const m=publicMenu.find(x=>x.id===id);if(m){total+=Number(m.price)*q;lines.push(`${q} x ${m.name}`)}}return{total,lines}}
+function renderCart(){const {total,lines}=cartTotals();$('cartList').innerHTML=lines.length?lines.map(line=>{const q=Number(line.split(' x ')[0]),name=line.substring(line.indexOf(' x ')+3),m=publicMenu.find(x=>x.name===name);return `<div class="row"><span>${esc(line)}</span><span class="qty"><button class="btn ghost" onclick="changeCart('${m.id}',-1)">−</button><button class="btn ghost" onclick="changeCart('${m.id}',1)">＋</button></span></div>`}).join('')+`<hr><b>Total: ${money(total)}</b>`:'Aún no has elegido productos.'}
+function toggleCustomerAddress(){$('custAddressWrap').classList.toggle('hidden',$('custFulfillment').value!=='delivery')}
+function toggleCustomerReceipt(){$('custReceiptWrap').classList.toggle('hidden',$('custPayment').value!=='transfer')}
+async function submitCustomerOrder(){
+ const {total,lines}=cartTotals();if(!lines.length)return alert('Elige al menos un producto.');
+ const name=$('custName').value.trim(),phone=$('custPhone').value.trim();if(!name||!phone)return alert('Escribe nombre y teléfono.');
+ const args={p_customer_name:name,p_customer_phone:phone,p_items_text:lines.join('\n'),p_total:total,p_fulfillment:$('custFulfillment').value,p_address:$('custAddress').value.trim(),p_payment_method:$('custPayment').value,p_eta_minutes:30,p_notes:$('custNotes').value.trim()};
+ const {data,error}=await sb.rpc('gl_public_create_order_v11',args);if(error)return alert(error.message);
+ const f=$('custReceipt').files[0];if(f&&args.p_payment_method==='transfer'){try{await uploadReceipt(data.order_id,f,true,phone)}catch(e){alert('Pedido creado, pero no pude subir comprobante: '+e.message)}}
+ alert('✅ Pedido #'+data.order_number+' recibido. Tiempo aprox. 30 min.');
+ cart={};renderCart();closeModalId('customerMenuModal');
+}
+
+async function openRaffle(orderId){
+ const {error}=await sb.rpc('gl_ensure_raffle_tickets',{p_order_id:orderId});if(error)return alert(error.message);
+ const r=await sb.rpc('gl_raffle_tickets',{p_order_id:orderId});if(r.error)return alert(r.error.message);
+ $('raffleList').innerHTML=(r.data||[]).map(x=>`<div class="panel"><b>🎟️ Boleto #${x.ticket_number}</b><br>${esc(x.customer_name||'')} · ${esc(x.customer_phone||'')}<br><button class="btn primary" onclick='printRaffle(${JSON.stringify(JSON.stringify(x))})'>🖨️ Imprimir</button></div>`).join('');
+ $('raffleModal').classList.remove('hidden');
+}
+function printRaffle(s){
+ const x=JSON.parse(s),payload=`GestionLink|Rifa|${x.ticket_number}|${x.customer_name||''}|${x.customer_phone||''}`;
+ $('printArea').innerHTML=`<div style="text-align:center;font-family:monospace;width:58mm"><h3>ENTRE FUEGOS 🔥</h3><b>RIFA · BOLETO #${x.ticket_number}</b><p>${esc(x.customer_name||'')}</p><p>${esc(x.customer_phone||'')}</p><div id="qrPrint" style="display:inline-block"></div><p style="font-size:10px">Conserva este boleto</p></div>`;
+ new QRCode(document.getElementById('qrPrint'),{text:payload,width:130,height:130});
+ setTimeout(()=>window.print(),250);
+}
+async function openUsers(){$('usersModal').classList.remove('hidden');const {data,error}=await sb.rpc('gl_list_users');if(error)return alert(error.message);$('usersList').innerHTML=(data||[]).map(u=>`<div class="userline"><div><b>${esc(u.name)}</b><div class="muted">${u.role==='admin'?'Administrador':u.role==='kitchen'?'Cocina':'Delivery'} · ${u.active?'Activo':'Pendiente'}</div></div>${u.role!=='admin'?`<button class="btn ${u.active?'danger':'primary'}" onclick="setActive('${u.id}',${!u.active})">${u.active?'Desactivar':'ACTIVAR'}</button>`:''}</div>`).join('')}function closeUsers(){$('usersModal').classList.add('hidden')}async function setActive(id,active){const {error}=await sb.rpc('gl_set_user_active',{p_user_id:id,p_active:active});if(error)return alert(error.message);openUsers();}
+async function clearTestOrders(){
+ if(!profile||profile.role!=='admin')return;
+ const ok=confirm('Esto borrará TODOS los pedidos actuales de Entre Fuegos para empezar limpio. ¿Confirmas que todos son pedidos de prueba?');
+ if(!ok)return;
+ const typed=prompt('Para confirmar escribe: BORRAR PRUEBAS');
+ if(typed!=='BORRAR PRUEBAS')return alert('Limpieza cancelada.');
+ const {data,error}=await sb.rpc('gl_clear_test_orders');
+ if(error)return alert(error.message);
+ orders=[];firstSync=true;previousStates=new Map();render();updateSalesSummary();
+ alert('Listo. Se eliminaron '+(data?.deleted??0)+' pedidos de prueba.');
+ await loadOrders();
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&profile)loadOrders();});
+function localDateISO(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function openReports(){$('reportsModal').classList.remove('hidden');const today=localDateISO();$('reportDate').value=today;$('reportMonth').value=today.slice(0,7);loadDailyReport();loadMonth()}
+function closeReports(){$('reportsModal').classList.add('hidden')}
+async function saveOpening(){const d=$('reportDate').value||localDateISO(),amount=Number($('openingCash').value||0);const {error}=await sb.rpc('gl_set_opening_cash',{p_date:d,p_amount:amount});if(error)return alert(error.message);await loadDailyReport();alert('Apertura guardada: '+money(amount))}
+async function loadDailyReport(){const d=$('reportDate').value||localDateISO();const {data,error}=await sb.rpc('gl_daily_report_v11',{p_date:d});if(error)return alert(error.message);$('openingCash').value=Number(data.opening_cash||0).toFixed(2);if(data.counted_cash!=null)$('countedCash').value=Number(data.counted_cash).toFixed(2);let diff=data.difference==null?'Sin cerrar':Math.abs(Number(data.difference))<.005?'✅ CUADRA':Number(data.difference)>0?'⬆️ Sobrante '+money(data.difference):'⬇️ Faltante '+money(Math.abs(data.difference));$('dailyBox').innerHTML='<b>📅 '+d+'</b><br>💰 Apertura: '+money(data.opening_cash)+'<br>💵 Ventas efectivo: '+money(data.cash)+'<br>📲 Ventas transferencia: '+money(data.transfer)+'<br><b>Ventas totales: '+money(data.total)+'</b><br>📦 Pedidos entregados: '+data.orders+'<br>💸 Gastos: '+money(data.expenses||0)+'<br><b>📈 Utilidad aprox.: '+money(data.approx_profit||0)+'</b><br><b>💵 Efectivo esperado: '+money(data.expected_cash)+'</b><br>Estado: '+diff}
+async function closeSelectedDay(){const d=$('reportDate').value||localDateISO(),counted=$('countedCash').value;if(counted==='')return alert('Escribe cuánto efectivo contaste físicamente.');if(!confirm('¿Cerrar la caja del '+d+'?'))return;const {data,error}=await sb.rpc('gl_close_day_v2',{p_date:d,p_counted_cash:Number(counted)});if(error)return alert(error.message);const diff=Number(data.difference);alert(Math.abs(diff)<.005?'✅ Caja cuadrada. Cierre guardado.':diff>0?'Cierre guardado. Sobrante: '+money(diff):'Cierre guardado. Faltante: '+money(Math.abs(diff)));await loadDailyReport();await loadMonth()}
+async function loadMonth(){
+ const m=$('reportMonth').value||localDateISO().slice(0,7);
+ const [summaryRes,closingRes]=await Promise.all([
+   sb.rpc('gl_month_report_v11',{p_month:m+'-01'}),
+   sb.rpc('gl_closing_history_v2',{p_month:m+'-01'})
+ ]);
+ if(summaryRes.error)return alert(summaryRes.error.message);if(closingRes.error)return alert(closingRes.error.message);
+ const s=summaryRes.data||{},rows=closingRes.data||[];
+ $('monthSummary').classList.remove('hidden');
+ $('monthSummary').innerHTML='<b>📊 '+m+'</b><br>Ventas: <b>'+money(s.total)+'</b><br>💵 Efectivo: '+money(s.cash)+'<br>📲 Transferencias: '+money(s.transfer)+'<br>💸 Gastos: '+money(s.expenses)+'<br><b>📈 Utilidad aprox.: '+money(s.approx_profit)+'</b><br>📦 Pedidos: '+(s.orders||0);
+ $('closingList').innerHTML=rows.length?rows.map(x=>{let d=Number(x.difference||0),st=Math.abs(d)<.005?'✅ Cuadra':d>0?'Sobra '+money(d):'Falta '+money(Math.abs(d));return '<div class="userline"><div><b>📅 '+x.date+'</b><div class="muted">Ventas '+money(x.total)+' · Efectivo '+money(x.cash)+' · Transferencia '+money(x.transfer)+'<br>Apertura '+money(x.opening_cash)+' · '+st+'</div></div><b>'+money(x.total)+'</b></div>'}).join(''):'<div class="muted" style="margin-top:10px">Todavía no hay cierres guardados en este mes.</div>';
+}
+(async()=>{const {data:{session}}=await sb.auth.getSession();if(session)await afterAuth();})();setInterval(()=>{if(profile&&!document.hidden)loadOrders()},12000);
+</script></body></html>
