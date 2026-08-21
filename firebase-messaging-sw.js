@@ -12,14 +12,21 @@ firebase.initializeApp({
 
 const messaging=firebase.messaging();
 
-messaging.onBackgroundMessage((payload)=>{
-  const d=payload.data||{};
-  self.registration.showNotification(d.title||'🔥 GestiónLink · Entre Fuegos',{
-    body:d.body||'Tienes una actualización de pedido.',
-    tag:d.tag||'gestionlink',
-    renotify:true,
-    vibrate:[400,120,400,120,650],
-    data:{url:d.url||'/'}
+messaging.onBackgroundMessage((payload) => {
+  const d = payload.data || {};
+  const n = payload.notification || {};
+
+  const title = d.title || n.title || '🔥 Entre Fuegos';
+  const body = d.body || n.body || '¡Tienes un nuevo pedido!';
+
+  self.registration.showNotification(title, {
+    body: body,
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    tag: d.tag || 'gestionlink',
+    renotify: true,
+    vibrate: [500, 200, 500, 200, 700],
+    data: { url: d.url || '/' }
   });
 });
 
