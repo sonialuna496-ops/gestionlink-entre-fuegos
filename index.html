@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>GestiónLink V11 · Entre Fuegos</title>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>GestiónLink</title><meta name="theme-color" content="#101010"><meta name="application-name" content="GestiónLink"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="GestiónLink"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png"><link rel="apple-touch-icon" href="/icon-192.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-messaging-compat.js"></script>
@@ -19,13 +19,13 @@
 .printOnly{display:none}
 @media print{body>*{display:none!important}.printOnly{display:block!important;color:#000;background:#fff;padding:12px}.printOnly *{color:#000!important}}
 </style></head><body>
-<div id="authScreen" class="screen"><div class="auth"><div class="brand">GESTIÓN<span>LINK</span> 🔥</div><h2>Entre Fuegos</h2><p class="muted">V11 conectada a la base de datos real. Cada persona entra con su propia cuenta.</p>
+<div id="authScreen" class="screen"><div class="auth"><div class="brand">GESTIÓN<span>LINK</span></div><p class="muted">Sistema de gestión de pedidos. Cada persona entra con su propia cuenta.</p>
 <div id="authMsg" class="msg hidden"></div><label>Correo electrónico</label><input id="email" type="email" autocomplete="email" placeholder="tu@correo.com"><label>Contraseña</label><input id="password" type="password" autocomplete="current-password" placeholder="Mínimo 6 caracteres">
 <div class="row" style="margin-top:12px"><button class="btn primary" onclick="login()">ENTRAR</button><button class="btn ghost" onclick="signup()">CREAR CUENTA</button></div><button class="btn ghost" style="width:100%;margin-top:8px" onclick="openCustomerMenu()">🍔 VER MENÚ Y PEDIR</button>
 <div id="claimBox" class="hidden"></div>
 <div id="requestBox" class="hidden"><hr style="border-color:#333;margin:18px 0"><h3>Solicitar acceso</h3><label>Nombre</label><input id="requestName"><label>Área</label><select id="requestRole"><option value="kitchen">Cocina</option><option value="delivery">Delivery</option></select><button class="btn primary" style="width:100%;margin-top:10px" onclick="requestAccess()">SOLICITAR ACCESO</button><p class="muted">La administradora debe activarte antes de que puedas ver pedidos.</p></div>
 </div></div>
-<div id="app" class="hidden"><header><div><div class="brand">ENTRE <span>FUEGOS</span> 🔥</div><div class="muted">GestiónLink V11 · versión final</div></div><div class="row" style="flex:0 1 auto"><span id="rolePill" class="pill"></span><button class="btn ghost" onclick="logout()">Salir</button></div></header><main><div class="topbar"><button id="newOrderBtn" class="btn primary hidden" onclick="openNew()">＋ Pedido nuevo</button><button id="usersBtn" class="btn ghost hidden" onclick="openUsers()">👥 Usuarios</button><button id="closeDayBtn" class="btn ghost hidden" onclick="openReports()">📅 Caja y cierres</button><button id="historyBtn" class="btn ghost hidden navbtn" onclick="openHistory()">🔎 Historial</button>
+<div id="app" class="hidden"><header><div><div class="brand">GESTIÓN<span>LINK</span></div><div class="muted">Gestión de pedidos</div></div><div class="row" style="flex:0 1 auto"><span id="rolePill" class="pill"></span><button class="btn ghost" onclick="logout()">Salir</button></div></header><main><div class="topbar"><button id="newOrderBtn" class="btn primary hidden" onclick="openNew()">＋ Pedido nuevo</button><button id="usersBtn" class="btn ghost hidden" onclick="openUsers()">👥 Usuarios</button><button id="closeDayBtn" class="btn ghost hidden" onclick="openReports()">📅 Caja y cierres</button><button id="historyBtn" class="btn ghost hidden navbtn" onclick="openHistory()">🔎 Historial</button>
 <button id="staffBtn" class="btn ghost hidden navbtn" onclick="openStaffPerformance()">👥 Personal</button>
 <button id="inventoryBtn" class="btn ghost hidden navbtn" onclick="openInventory()">📦 Inventario</button>
 <button id="expensesBtn" class="btn ghost hidden navbtn" onclick="openExpenses()">💸 Gastos</button>
@@ -61,7 +61,7 @@
 
 <div id="customersModal" class="modal hidden"><div class="box"><div class="row"><h2>⭐ Clientes frecuentes</h2><button class="btn ghost" onclick="closeModalId('customersModal')">✕</button></div><div id="customersList"></div></div></div>
 
-<div id="customerMenuModal" class="modal hidden"><div class="box" style="width:min(900px,100%)"><div class="row"><div><div class="brand">ENTRE <span>FUEGOS</span> 🔥</div><div class="muted">Haz tu pedido</div></div><button class="btn ghost" onclick="closeModalId('customerMenuModal')">✕</button></div>
+<div id="customerMenuModal" class="modal hidden"><div class="box" style="width:min(900px,100%)"><div class="row"><div><div class="brand">GESTIÓN<span>LINK</span></div><div class="muted">Haz tu pedido</div></div><button class="btn ghost" onclick="closeModalId('customerMenuModal')">✕</button></div>
 <div id="customerMenuGrid" class="menuGrid"></div><hr style="border-color:#333"><h3>🛒 Tu pedido</h3><div id="cartList" class="panel">Aún no has elegido productos.</div>
 <div class="row"><input id="custName" placeholder="Nombre"><input id="custPhone" placeholder="Teléfono"></div>
 <label>Entrega</label><select id="custFulfillment" onchange="toggleCustomerAddress()"><option value="delivery">🏠 Delivery</option><option value="pickup">🛍️ Retiro en local</option><option value="local">🍽️ Consume en local</option></select>
