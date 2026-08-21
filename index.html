@@ -55,7 +55,8 @@
 
 <div id="menuAdminModal" class="modal hidden"><div class="box"><div class="row"><h2>🍔 Menú del cliente</h2><button class="btn ghost" onclick="closeModalId('menuAdminModal')">✕</button></div>
 <input id="menuId" type="hidden"><div class="row"><input id="menuName" placeholder="Producto"><input id="menuPrice" type="number" step="0.01" placeholder="Precio"></div>
-<input id="menuCategory" placeholder="Categoría"><input id="menuDescription" placeholder="Descripción"><input id="menuImage" placeholder="URL de foto (opcional)">
+<input id="menuCategory" placeholder="Categoría"><input id="menuDescription" placeholder="Descripción">
+<input id="menuImage" type="hidden"><label>📷 Foto del producto</label><input id="menuImageFile" type="file" accept="image/*" onchange="previewMenuImage()"><div class="tiny">Puedes tomar una foto o elegir una de la galería. Si estás editando un producto y no eliges otra foto, se conserva la actual.</div><div id="menuImagePreviewWrap" class="hidden" style="margin-top:8px"><img id="menuImagePreview" alt="Vista previa" style="width:100%;max-height:220px;object-fit:cover;border-radius:10px;border:1px solid #444"><button type="button" class="btn ghost" style="width:100%;margin-top:6px" onclick="removeMenuImage()">🗑️ Quitar foto</button></div>
 <div class="row"><label><input id="menuSold" type="checkbox" style="width:auto"> AGOTADO</label><label><input id="menuActive" type="checkbox" style="width:auto" checked> ACTIVO</label></div>
 <button class="btn primary" style="width:100%" onclick="saveMenuItem()">GUARDAR PRODUCTO</button><div id="menuAdminList"></div></div></div>
 
@@ -409,8 +410,55 @@ async function loadExpenses(){const d=$('expenseDate').value||localDateISO();con
 async function saveExpense(){const d=$('expenseDate').value||localDateISO(),concept=$('expenseConcept').value.trim(),amount=Number($('expenseAmount').value||0);if(!concept||amount<=0)return alert('Escribe concepto y valor.');const {error}=await sb.rpc('gl_expense_add',{p_date:d,p_concept:concept,p_amount:amount});if(error)return alert(error.message);$('expenseConcept').value='';$('expenseAmount').value='';await loadExpenses()}
 async function openMenuAdmin(){$('menuAdminModal').classList.remove('hidden');await loadMenuAdmin()}
 async function loadMenuAdmin(){const {data,error}=await sb.rpc('gl_menu_list_admin');if(error)return alert(error.message);$('menuAdminList').innerHTML=(data||[]).map(m=>`<div class="userline"><div><b>${esc(m.name)}</b><div class="tiny">${esc(m.category)} · ${money(m.price)} · ${m.sold_out?'AGOTADO':'Disponible'}</div></div><button class="btn ghost" onclick='editMenu(${JSON.stringify(JSON.stringify(m))})'>Editar</button></div>`).join('')}
-function editMenu(s){const m=JSON.parse(s);$('menuId').value=m.id;$('menuName').value=m.name;$('menuPrice').value=m.price;$('menuCategory').value=m.category;$('menuDescription').value=m.description||'';$('menuImage').value=m.image_url||'';$('menuSold').checked=!!m.sold_out;$('menuActive').checked=!!m.active}
-async function saveMenuItem(){const id=$('menuId').value||null,args={p_id:id,p_name:$('menuName').value.trim(),p_description:$('menuDescription').value.trim(),p_price:Number($('menuPrice').value||0),p_category:$('menuCategory').value.trim(),p_image_url:$('menuImage').value.trim()||null,p_sold_out:$('menuSold').checked,p_active:$('menuActive').checked};if(!args.p_name||args.p_price<0)return alert('Revisa producto y precio.');const {error}=await sb.rpc('gl_menu_save',args);if(error)return alert(error.message);['menuId','menuName','menuPrice','menuCategory','menuDescription','menuImage'].forEach(id=>$(id).value='');$('menuSold').checked=false;$('menuActive').checked=true;await loadMenuAdmin()}
+function setMenuImagePreview(url){
+  const wrap=$('menuImagePreviewWrap'),img=$('menuImagePreview');
+  if(url){img.src=url;wrap.classList.remove('hidden')}else{img.removeAttribute('src');wrap.classList.add('hidden')}
+}
+function previewMenuImage(){
+  const f=$('menuImageFile').files[0];
+  if(!f)return setMenuImagePreview($('menuImage').value||'');
+  if(!f.type.startsWith('image/')){ $('menuImageFile').value=''; return alert('Elige una imagen.'); }
+  if(f.size>5*1024*1024){ $('menuImageFile').value=''; return alert('La foto debe pesar máximo 5 MB.'); }
+  const u=URL.createObjectURL(f); setMenuImagePreview(u); setTimeout(()=>URL.revokeObjectURL(u),60000);
+}
+function removeMenuImage(){ $('menuImage').value=''; $('menuImageFile').value=''; setMenuImagePreview(''); }
+function resetMenuForm(){
+  ['menuId','menuName','menuPrice','menuCategory','menuDescription','menuImage'].forEach(id=>$(id).value='');
+  $('menuImageFile').value='';$('menuSold').checked=false;$('menuActive').checked=true;setMenuImagePreview('');
+}
+function editMenu(s){
+  const m=JSON.parse(s);
+  $('menuId').value=m.id;$('menuName').value=m.name;$('menuPrice').value=m.price;$('menuCategory').value=m.category;$('menuDescription').value=m.description||'';$('menuImage').value=m.image_url||'';$('menuImageFile').value='';$('menuSold').checked=!!m.sold_out;$('menuActive').checked=!!m.active;setMenuImagePreview(m.image_url||'');
+  document.querySelector('#menuAdminModal .box').scrollTop=0;
+}
+async function uploadMenuImage(file){
+  if(!file)return $('menuImage').value.trim()||null;
+  if(!profile||profile.role!=='admin')throw new Error('Solo administración puede subir fotos.');
+  const ext=((file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,''))||'jpg';
+  const path=`${profile.business_id}/${crypto.randomUUID()}.${ext}`;
+  const {error}=await sb.storage.from('menu-images').upload(path,file,{upsert:false,contentType:file.type||undefined});
+  if(error)throw error;
+  const {data}=sb.storage.from('menu-images').getPublicUrl(path);
+  if(!data?.publicUrl)throw new Error('No pude obtener la dirección de la foto.');
+  return data.publicUrl;
+}
+async function saveMenuItem(){
+  const id=$('menuId').value||null,name=$('menuName').value.trim(),price=Number($('menuPrice').value||0);
+  if(!name||price<0)return alert('Revisa producto y precio.');
+  const btn=document.querySelector('#menuAdminModal .primary');
+  if(btn){btn.disabled=true;btn.textContent='GUARDANDO…'}
+  try{
+    const imageUrl=await uploadMenuImage($('menuImageFile').files[0]);
+    const args={p_id:id,p_name:name,p_description:$('menuDescription').value.trim(),p_price:price,p_category:$('menuCategory').value.trim(),p_image_url:imageUrl,p_sold_out:$('menuSold').checked,p_active:$('menuActive').checked};
+    const {error}=await sb.rpc('gl_menu_save',args);
+    if(error)throw error;
+    resetMenuForm();
+    await loadMenuAdmin();
+    alert(id?'✅ Producto actualizado.':'✅ Producto agregado al menú.');
+  }catch(e){
+    console.error('Guardar menú:',e);alert('No pude guardar el producto: '+(e.message||e));
+  }finally{if(btn){btn.disabled=false;btn.textContent='GUARDAR PRODUCTO'}}
+}
 async function openCustomers(){$('customersModal').classList.remove('hidden');const {data,error}=await sb.rpc('gl_customers_summary');if(error)return alert(error.message);$('customersList').innerHTML=(data||[]).map((c,i)=>`<div class="panel">${i<5?'⭐ ':''}<b>${esc(c.name||'Sin nombre')}</b><br>📞 ${esc(c.phone||'—')} · ${c.orders} pedidos · <b>${money(c.total_spent)}</b><br><span class="tiny">Última compra: ${c.last_order?new Date(c.last_order).toLocaleDateString():'—'}</span></div>`).join('')}
 
 let publicMenu=[],cart={};
@@ -466,47 +514,8 @@ async function printOrderTicket(orderId){
   const o=orders.find(x=>String(x.id)===String(orderId));
   if(!o) return alert('No encontré el pedido.');
 
-  // Si este pedido genera boletos de rifa, obtenemos los boletos REALES
-  // que ya usa GestiónLink. No inventamos números ni QR.
-  let raffleTickets=[];
-  if(o.fulfillment==='local' && Number(o.total)>=5){
-    try{
-      const ensured=await sb.rpc('gl_ensure_raffle_tickets',{p_order_id:o.id});
-      if(!ensured.error){
-        const r=await sb.rpc('gl_raffle_tickets',{p_order_id:o.id});
-        if(!r.error) raffleTickets=r.data||[];
-      }
-    }catch(e){ console.warn('Rifa para ticket:',e); }
-  }
-
-  // Genera el QR real de cada boleto usando exactamente el mismo payload
-  // que la función de rifa original de GestiónLink.
-  async function makeQrCanvas(x){
-    const payload=`GestionLink|Rifa|${x.ticket_number}|${x.customer_name||''}|${x.customer_phone||''}`;
-    const holder=document.createElement('div');
-    holder.style.position='fixed';
-    holder.style.left='-9999px';
-    holder.style.top='-9999px';
-    document.body.appendChild(holder);
-    new QRCode(holder,{text:payload,width:180,height:180,correctLevel:QRCode.CorrectLevel.M});
-    await new Promise(r=>setTimeout(r,120));
-    const qr=holder.querySelector('canvas');
-    let copy=null;
-    if(qr){
-      copy=document.createElement('canvas');
-      copy.width=qr.width; copy.height=qr.height;
-      copy.getContext('2d').drawImage(qr,0,0);
-    }
-    holder.remove();
-    return copy;
-  }
-
-  const qrCanvases=[];
-  for(const t of raffleTickets){
-    const q=await makeQrCanvas(t);
-    if(q) qrCanvases.push({ticket:t,canvas:q});
-  }
-
+  // IMPORTANTE: el ticket del pedido se imprime SOLO.
+  // Los boletos de rifa se imprimen por separado desde el botón Rifa.
   const W=576, pad=34, maxW=W-pad*2;
   const rows=[];
   const measure=document.createElement('canvas').getContext('2d');
@@ -529,89 +538,37 @@ async function printOrderTicket(orderId){
   for(const [k,v] of fields){
     rows.push({text:k+':',x:pad,y,bold:true,size:24}); y+=29;
     measure.font='24px monospace';
-    for(const line of ticketWrap(measure,v,maxW)){
-      rows.push({text:line,x:pad,y,size:24}); y+=29;
-    }
+    for(const line of ticketWrap(measure,v,maxW)){rows.push({text:line,x:pad,y,size:24});y+=29}
     y+=5;
   }
 
   rows.push({text:'PEDIDO:',x:pad,y,bold:true,size:26}); y+=33;
   measure.font='26px monospace';
   for(const p of String(o.items_text||'').split('\n')){
-    for(const line of ticketWrap(measure,p,maxW)){
-      rows.push({text:line,x:pad,y,bold:true,size:26}); y+=33;
-    }
+    for(const line of ticketWrap(measure,p,maxW)){rows.push({text:line,x:pad,y,bold:true,size:26});y+=33}
   }
 
   if(o.notes){
-    y+=8;
-    rows.push({text:'OBSERVACIONES:',x:pad,y,bold:true,size:24}); y+=31;
-    measure.font='24px monospace';
-    for(const p of String(o.notes).split('\n')){
-      for(const line of ticketWrap(measure,p,maxW)){
-        rows.push({text:line,x:pad,y,size:24}); y+=29;
-      }
-    }
+    y+=8;rows.push({text:'OBSERVACIONES:',x:pad,y,bold:true,size:24});y+=31;measure.font='24px monospace';
+    for(const p of String(o.notes).split('\n')){for(const line of ticketWrap(measure,p,maxW)){rows.push({text:line,x:pad,y,size:24});y+=29}}
   }
 
-  y+=16;
-  rows.push({text:'--------------------------------',x:pad,y,size:22}); y+=34;
+  y+=16;rows.push({text:'--------------------------------',x:pad,y,size:22});y+=34;
+  rows.push({text:'Gracias',y,center:true,bold:true,size:26});y+=42;
 
-  // Reserva espacio para los QR reales de la rifa.
-  const qrDraw=[];
-  for(const item of qrCanvases){
-    rows.push({text:'RIFA · BOLETO #'+item.ticket.ticket_number,y,center:true,bold:true,size:26});
-    y+=38;
-    qrDraw.push({canvas:item.canvas,y});
-    y+=200;
-    rows.push({text:'Conserva este boleto',y,center:true,size:20});
-    y+=34;
-  }
-
-  rows.push({text:'Gracias',y,center:true,bold:true,size:26}); y+=42;
-
-  const canvas=document.createElement('canvas');
-  canvas.width=W;
-  canvas.height=Math.max(420,y+18);
-  const c=canvas.getContext('2d');
-  c.fillStyle='#fff';
-  c.fillRect(0,0,canvas.width,canvas.height);
-  c.fillStyle='#000';
-  c.textBaseline='top';
-
-  for(const r of rows){
-    c.font=`${r.bold?'bold ':''}${r.size||24}px monospace`;
-    c.textAlign=r.center?'center':'left';
-    c.fillText(r.text,r.center?W/2:(r.x||pad),r.y);
-  }
-
-  for(const q of qrDraw){
-    const size=180;
-    c.drawImage(q.canvas,(W-size)/2,q.y,size,size);
-  }
+  const canvas=document.createElement('canvas');canvas.width=W;canvas.height=Math.max(420,y+18);
+  const c=canvas.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,canvas.width,canvas.height);c.fillStyle='#000';c.textBaseline='top';
+  for(const r of rows){c.font=`${r.bold?'bold ':''}${r.size||24}px monospace`;c.textAlign=r.center?'center':'left';c.fillText(r.text,r.center?W/2:(r.x||pad),r.y)}
 
   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
-  if(!blob) return alert('No pude preparar el ticket.');
+  if(!blob)return alert('No pude preparar el ticket.');
   const file=new File([blob],`GestionLink-pedido-${o.order_number||'ticket'}.png`,{type:'image/png'});
-
   try{
-    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
-      await navigator.share({
-        title:'Ticket GestiónLink',
-        text:'Pedido #'+(o.order_number||''),
-        files:[file]
-      });
-      return;
+    if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){
+      await navigator.share({title:'Ticket GestiónLink',text:'Pedido #'+(o.order_number||''),files:[file]});return;
     }
-  }catch(e){
-    if(e && e.name==='AbortError') return;
-    console.warn('Compartir ticket:',e);
-  }
-
-  const url=URL.createObjectURL(blob);
-  const w=window.open(url,'_blank');
-  if(!w) location.href=url;
-  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch(e){if(e&&e.name==='AbortError')return;console.warn('Compartir ticket:',e)}
+  const url=URL.createObjectURL(blob),w=window.open(url,'_blank');if(!w)location.href=url;setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 
 async function openRaffle(orderId){
@@ -620,11 +577,35 @@ async function openRaffle(orderId){
  $('raffleList').innerHTML=(r.data||[]).map(x=>`<div class="panel"><b>🎟️ Boleto #${x.ticket_number}</b><br>${esc(x.customer_name||'')} · ${esc(x.customer_phone||'')}<br><button class="btn primary" onclick='printRaffle(${JSON.stringify(JSON.stringify(x))})'>🖨️ Imprimir</button></div>`).join('');
  $('raffleModal').classList.remove('hidden');
 }
-function printRaffle(s){
- const x=JSON.parse(s),payload=`GestionLink|Rifa|${x.ticket_number}|${x.customer_name||''}|${x.customer_phone||''}`;
- $('printArea').innerHTML=`<div style="text-align:center;font-family:monospace;width:58mm"><h3>ENTRE FUEGOS 🔥</h3><b>RIFA · BOLETO #${x.ticket_number}</b><p>${esc(x.customer_name||'')}</p><p>${esc(x.customer_phone||'')}</p><div id="qrPrint" style="display:inline-block"></div><p style="font-size:10px">Conserva este boleto</p></div>`;
- new QRCode(document.getElementById('qrPrint'),{text:payload,width:130,height:130});
- setTimeout(()=>window.print(),250);
+async function printRaffle(s){
+  const x=JSON.parse(s),payload=`GestionLink|Rifa|${x.ticket_number}|${x.customer_name||''}|${x.customer_phone||''}`;
+  const holder=document.createElement('div');holder.style.position='fixed';holder.style.left='-9999px';holder.style.top='-9999px';document.body.appendChild(holder);
+  new QRCode(holder,{text:payload,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
+  await new Promise(r=>setTimeout(r,140));
+  const qr=holder.querySelector('canvas');
+  if(!qr){holder.remove();return alert('No pude generar el QR del boleto.')}
+
+  // Un archivo = un cupón. Nunca se mezcla con la factura ni con otros boletos.
+  const W=576,H=650,canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
+  const c=canvas.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,W,H);c.fillStyle='#000';c.textAlign='center';c.textBaseline='top';
+  c.font='bold 34px monospace';c.fillText('ENTRE FUEGOS',W/2,28);
+  c.font='bold 30px monospace';c.fillText('RIFA · BOLETO #'+x.ticket_number,W/2,84);
+  c.font='24px monospace';c.fillText(String(x.customer_name||''),W/2,140);
+  c.fillText(String(x.customer_phone||''),W/2,178);
+  const size=260;c.drawImage(qr,(W-size)/2,230,size,size);
+  c.font='20px monospace';c.fillText('Conserva este boleto',W/2,520);
+  c.font='18px monospace';c.fillText('GestionLink',W/2,560);
+  holder.remove();
+
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+  if(!blob)return alert('No pude preparar el boleto.');
+  const file=new File([blob],`Rifa-Entre-Fuegos-${x.ticket_number}.png`,{type:'image/png'});
+  try{
+    if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]}))){
+      await navigator.share({title:'Boleto de rifa '+x.ticket_number,text:'Rifa Entre Fuegos · boleto #'+x.ticket_number,files:[file]});return;
+    }
+  }catch(e){if(e&&e.name==='AbortError')return;console.warn('Compartir rifa:',e)}
+  const url=URL.createObjectURL(blob),w=window.open(url,'_blank');if(!w)location.href=url;setTimeout(()=>URL.revokeObjectURL(url),60000);
 }
 async function openUsers(){$('usersModal').classList.remove('hidden');const {data,error}=await sb.rpc('gl_list_users');if(error)return alert(error.message);$('usersList').innerHTML=(data||[]).map(u=>`<div class="userline"><div><b>${esc(u.name)}</b><div class="muted">${u.role==='admin'?'Administrador':u.role==='kitchen'?'Cocina':'Delivery'} · ${u.active?'Activo':'Pendiente'}</div></div>${u.role!=='admin'?`<button class="btn ${u.active?'danger':'primary'}" onclick="setActive('${u.id}',${!u.active})">${u.active?'Desactivar':'ACTIVAR'}</button>`:''}</div>`).join('')}function closeUsers(){$('usersModal').classList.add('hidden')}async function setActive(id,active){const {error}=await sb.rpc('gl_set_user_active',{p_user_id:id,p_active:active});if(error)return alert(error.message);openUsers();}
 async function clearTestOrders(){
